@@ -12,6 +12,8 @@ import os
 app = dash.Dash(__name__)
 server = app.server  # Required for deployment
 
+DATA_URL = "https://raw.githubusercontent.com/samueltkwak/Lenhart-2015-ACL-Strain-Plot/main/data.txt"
+
 # For deployment, we'll include sample data or allow file upload
 # This version will work with uploaded files through the web interface
 
