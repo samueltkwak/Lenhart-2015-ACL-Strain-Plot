@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: acl-model-dash-app
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server
+    plan: free
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
