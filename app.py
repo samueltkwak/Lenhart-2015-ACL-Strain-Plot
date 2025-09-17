@@ -139,7 +139,7 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
         colorscale='Balance',
         cmin=global_min,
         cmax=global_max,
-        colorbar=dict(title=z_axis_label, titleside='right', tickfont=dict(size=18))
+        colorbar=dict(title=z_axis_label, tickfont=dict(size=18))
     ))
     fig.add_trace(go.Surface(
         x=x_grid,
