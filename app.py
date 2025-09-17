@@ -1,195 +1,137 @@
-
+import dash
+from dash import dcc, html, Input, Output
+import dash_daq as daq
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import dash
-from dash import dcc, html, Input, Output
-import io
-import base64
-import os
 
-# Initialize the Dash app
-app = dash.Dash(__name__)
-server = app.server  # Required for deployment
+df = pd.read_csv('ACLforce_data.txt', sep='\t')
 
-DATA_URL = "https://raw.githubusercontent.com/samueltkwak/Lenhart-2015-ACL-Strain-Plot/main/data.txt"
+knee_flexion_angle = df.iloc[:, 0]
+knee_adduction_angle = df.iloc[:, 1]
+knee_internal_rotation_angle = df.iloc[:, 2]
+knee_posterior_translation = -df.iloc[:, 3]
+knee_medial_translation = -df.iloc[:, 4]
+aclpl_strain_raw = df.iloc[:, 17]
+aclam_strain_raw = df.iloc[:, 18]
 
-# For deployment, we'll include sample data or allow file upload
-# This version will work with uploaded files through the web interface
+aclpl_strain_percent = aclpl_strain_raw * 100
+aclam_strain_percent = aclam_strain_raw * 100
 
-def parse_contents(contents, filename):
-    """Parse uploaded file contents"""
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
+scroll_bar1_label = "Knee Flexion (°)"
+x_axis_label = "Knee Adduction (°)"
+y_axis_label = "Knee Internal Rotation (°)"
+scroll_bar2_label = "Anterior Tibial Translation (mm)"
+scroll_bar3_label = "Medial Tibial Translation (mm)"
 
-    try:
-        if 'txt' in filename:
-            # Assume tab-separated text file
-            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), sep='\t')
-        else:
-            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        return df
-    except Exception as e:
-        print(f"Error parsing file: {e}")
-        return None
+unique_knee_flexion_values = sorted(knee_flexion_angle.unique())
+unique_anterior_translation_values = sorted(knee_posterior_translation.unique())
+unique_lateral_translation_values = sorted(knee_medial_translation.unique())
+unique_x = sorted(knee_adduction_angle.unique())
+unique_y = sorted(knee_internal_rotation_angle.unique())
 
-# Define the layout
-app.layout = html.Div([
-    html.H1("Lenhart (2015) ACL model", 
-            style={'textAlign': 'center', 'marginBottom': 30, 'color': '#2c3e50'}),
-
-    html.Div([
-        html.H3("Upload Data File", style={'color': '#34495e'}),
-        dcc.Upload(
-            id='upload-data',
-            children=html.Div([
-                'Drag and Drop or ',
-                html.A('Select Files', style={'color': '#3498db', 'cursor': 'pointer'})
-            ]),
-            style={
-                'width': '100%', 'height': '60px', 'lineHeight': '60px',
-                'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
-                'textAlign': 'center', 'margin': '10px', 'backgroundColor': '#ecf0f1'
-            },
-            multiple=False
-        ),
-        html.Div(id='output-data-upload'),
-    ], style={'margin': '20px 0'}),
-
-    html.Div(id='slider-container', children=[], style={'margin': '20px 0'}),
-
-    dcc.Graph(id='acl-surface-plot', style={'height': '600px'}),
-
-    # Store component to hold the data
-    dcc.Store(id='stored-data')
-], style={'maxWidth': '1200px', 'margin': '0 auto', 'padding': '20px'})
-
-@app.callback(
-    [Output('stored-data', 'data'), 
-     Output('output-data-upload', 'children'),
-     Output('slider-container', 'children')],
-    [Input('upload-data', 'contents')],
-    [dash.dependencies.State('upload-data', 'filename')]
-)
-def update_output(contents, filename):
-    """Update stored data and create sliders when file is uploaded"""
-    if contents is None:
-        return None, "Please upload a tab-separated text file (.txt)", []
-
-    df = parse_contents(contents, filename)
-    if df is None:
-        return None, f"Error reading file {filename}", []
-
-    # Verify required columns exist
-    if df.shape[1] < 18:
-        return None, f"File must have at least 18 columns. Found {df.shape[1]}", []
-
-    # Get unique values for sliders
-    unique_flexion = sorted(df.iloc[:, 0].unique())
-    unique_anterior = sorted(df.iloc[:, 3].unique()) 
-    unique_lateral = sorted(df.iloc[:, 4].unique())
-
-    # Create sliders
-    sliders = [
-        html.Div([
-            html.Label("Knee Flexion Angle (°):", 
-                      style={'fontWeight': 'bold', 'marginBottom': 5, 'color': '#2c3e50'}),
-            dcc.Slider(
-                id='flexion-slider',
-                min=min(unique_flexion),
-                max=max(unique_flexion),
-                step=None,
-                marks={int(v): f'{v}°' for v in unique_flexion[::max(1, len(unique_flexion)//8)]},
-                value=unique_flexion[0],
-                tooltip={"placement": "bottom", "always_visible": True}
-            )
-        ], style={'margin': '20px 0'}),
-
-        html.Div([
-            html.Label("Knee Anterior Translation (mm):", 
-                      style={'fontWeight': 'bold', 'marginBottom': 5, 'color': '#2c3e50'}),
-            dcc.Slider(
-                id='anterior-slider',
-                min=min(unique_anterior),
-                max=max(unique_anterior),
-                step=None,
-                marks={v: f'{v}mm' for v in unique_anterior[::max(1, len(unique_anterior)//8)]},
-                value=unique_anterior[0],
-                tooltip={"placement": "bottom", "always_visible": True}
-            )
-        ], style={'margin': '20px 0'}),
-
-        html.Div([
-            html.Label("Knee Lateral Translation (mm):", 
-                      style={'fontWeight': 'bold', 'marginBottom': 5, 'color': '#2c3e50'}),
-            dcc.Slider(
-                id='lateral-slider',
-                min=min(unique_lateral),
-                max=max(unique_lateral),
-                step=None,
-                marks={v: f'{v}mm' for v in unique_lateral[::max(1, len(unique_lateral)//8)]},
-                value=unique_lateral[0],
-                tooltip={"placement": "bottom", "always_visible": True}
-            )
-        ], style={'margin': '20px 0'})
+def get_z_matrix(selected_flexion, selected_anterior, selected_lateral, strain_col):
+    filtered_data = df[
+        (knee_flexion_angle == selected_flexion) &
+        (knee_posterior_translation == selected_anterior) &
+        (knee_medial_translation == selected_lateral)
     ]
-
-    success_msg = html.Div([
-        html.P(f"✅ Successfully loaded {filename}", style={'color': '#27ae60', 'fontWeight': 'bold'}),
-        html.P(f"Data shape: {df.shape[0]} rows × {df.shape[1]} columns", style={'color': '#7f8c8d'})
-    ])
-
-    return df.to_dict('records'), success_msg, sliders
-
-@app.callback(
-    Output('acl-surface-plot', 'figure'),
-    [Input('flexion-slider', 'value'),
-     Input('anterior-slider', 'value'), 
-     Input('lateral-slider', 'value'),
-     Input('stored-data', 'data')]
-)
-def update_surface(flexion_val, anterior_val, lateral_val, stored_data):
-    """Update surface plot based on slider values"""
-
-    if stored_data is None or flexion_val is None:
-        # Return empty plot
-        fig = go.Figure()
-        fig.update_layout(
-            title="Please upload a data file to begin",
-            xaxis_title="No data loaded",
-            yaxis_title="No data loaded"
-        )
-        return fig
-
-    # Convert back to DataFrame
-    df = pd.DataFrame(stored_data)
-
-    # Get axis ranges
-    unique_x = sorted(df.iloc[:, 1].unique())  # Knee Adduction Angle
-    unique_y = sorted(df.iloc[:, 2].unique())  # Knee Internal Rotation Angle
-    x_grid, y_grid = np.meshgrid(unique_x, unique_y)
-
-    # Filter data based on slider values
-    filtered_data = df[(df.iloc[:, 0] == flexion_val) & 
-                       (df.iloc[:, 3] == anterior_val) & 
-                       (df.iloc[:, 4] == lateral_val)]
-
-    # Create surface data
     z_matrix = np.full((len(unique_y), len(unique_x)), np.nan)
     for i, y_val in enumerate(unique_y):
         for j, x_val in enumerate(unique_x):
             mask = (filtered_data.iloc[:, 1] == x_val) & (filtered_data.iloc[:, 2] == y_val)
             if mask.any():
-                z_matrix[i, j] = filtered_data[mask].iloc[0, 17] * 100  # Convert to percentage
+                z_matrix[i, j] = filtered_data[mask].iloc[0, strain_col] * 100
+    return z_matrix
 
-    # Calculate global min/max for consistent coloring
-    global_min = (df.iloc[:, 17] * 100).min()
-    global_max = (df.iloc[:, 17] * 100).max()
+app = dash.Dash(__name__)
+server = app.server
 
-    # Create the figure
+app.layout = html.Div([
+    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '30px', 'marginBottom': '10px'}),
+    html.Div([
+        html.Span("ACLpl", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginRight': '16px'}),
+        daq.ToggleSwitch(
+            id='z-axis-toggle',
+            value=False,  # False: PL, True: AM
+            style={'display': 'inline-block'}
+        ),
+        html.Span("ACLam", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginLeft': '16px'})
+    ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '20px', 'gap': '10px'}),
+    html.Div([
+        dcc.Graph(
+            id='surface-plot',
+            style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+        ),
+    ], style={
+        'width': '70vw',
+        'margin': 'auto',
+        'display': 'block',
+        'padding': '0px'
+    }),
+    html.Div([
+        html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
+        dcc.Slider(
+            id='flexion-slider',
+            min=0,
+            max=len(unique_knee_flexion_values)-1,
+            value=0,
+            marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values)},
+            step=None,
+            included=False
+        ),
+        html.Br(),
+        html.Label(scroll_bar2_label, style={'fontSize': '20px'}),
+        dcc.Slider(
+            id='anterior-slider',
+            min=0,
+            max=len(unique_anterior_translation_values)-1,
+            value=0,
+            marks={i: str(val) for i, val in enumerate(unique_anterior_translation_values)},
+            step=None,
+            included=False
+        ),
+        html.Br(),
+        html.Label(scroll_bar3_label, style={'fontSize': '20px'}),
+        dcc.Slider(
+            id='lateral-slider',
+            min=0,
+            max=len(unique_lateral_translation_values)-1,
+            value=0,
+            marks={i: str(val) for i, val in enumerate(unique_lateral_translation_values)},
+            step=None,
+            included=False
+        ),
+    ], style={'padding': '20px', 'marginTop': '30px', 'width': '60vw', 'margin': 'auto'})
+])
+
+@app.callback(
+    Output('surface-plot', 'figure'),
+    Input('z-axis-toggle', 'value'),
+    Input('flexion-slider', 'value'),
+    Input('anterior-slider', 'value'),
+    Input('lateral-slider', 'value')
+)
+def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
+    flexion = unique_knee_flexion_values[flexion_ix]
+    anterior = unique_anterior_translation_values[anterior_ix]
+    lateral = unique_lateral_translation_values[lateral_ix]
+
+    if toggle_value:
+        strain_col = 18
+        z_axis_label = "ACL AM Strain (%)"
+        global_min = aclam_strain_percent.min()
+        global_max = aclam_strain_percent.max()
+    else:
+        strain_col = 17
+        z_axis_label = "ACL PL Strain (%)"
+        global_min = aclpl_strain_percent.min()
+        global_max = aclpl_strain_percent.max()
+
+    z_matrix = get_z_matrix(flexion, anterior, lateral, strain_col)
+    x_grid, y_grid = np.meshgrid(unique_x, unique_y)
+    z_plane = np.zeros_like(x_grid)
     fig = go.Figure()
-
-    # Add surface plot
     fig.add_trace(go.Surface(
         x=x_grid,
         y=y_grid,
@@ -197,38 +139,33 @@ def update_surface(flexion_val, anterior_val, lateral_val, stored_data):
         colorscale='Balance',
         cmin=global_min,
         cmax=global_max,
-        colorbar=dict(title="ACLpl Strain (%)")
+        colorbar=dict(title=z_axis_label, titleside='right', tickfont=dict(size=18))
     ))
-
-    # Add reference plane at z=0
-    z_plane = np.zeros_like(x_grid)
     fig.add_trace(go.Surface(
         x=x_grid,
         y=y_grid,
         z=z_plane,
-        colorscale=[[0, 'rgba(150,150,150,0.5)'], [1, 'rgba(150,150,150,0.5)']], 
+        colorscale=[[0, 'rgba(150,150,150,0.5)'], [1, 'rgba(150,150,150,0.5)']],
         showscale=False,
         opacity=0.5,
         name='z=0 plane'
     ))
-
-    # Update layout
     fig.update_layout(
+        title="ACL Strain 3D Surface Visualization",
+        font=dict(size=18, family="Arial, sans-serif"),
         scene=dict(
-            xaxis_title="Knee Adduction Angle (°)",
-            yaxis_title="Knee Internal Rotation Angle (°)",
-            zaxis_title="ACLpl Strain (%)",
-            xaxis=dict(range=[min(unique_x), max(unique_x)]),
-            yaxis=dict(range=[min(unique_y), max(unique_y)]),
-            zaxis=dict(range=[global_min, global_max]),
+            xaxis_title=x_axis_label,
+            yaxis_title=y_axis_label,
+            zaxis_title=z_axis_label,
+            xaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[min(unique_x), max(unique_x)]),
+            yaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[min(unique_y), max(unique_y)]),
+            zaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[global_min, global_max]),
             aspectmode='cube',
             camera=dict(eye=dict(x=1.2, y=1.2, z=1.2))
         ),
-        margin=dict(l=0, r=0, t=0, b=0),
-        showlegend=False
+        margin=dict(l=75, r=75, t=75, b=120)
     )
-
     return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)
