@@ -119,12 +119,12 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
 
     if toggle_value:
         strain_col = 18
-        z_axis_label = "ACL AM Strain (%)"
+        z_axis_label = "ACLam Strain (%)"
         global_min = aclam_strain_percent.min()
         global_max = aclam_strain_percent.max()
     else:
         strain_col = 17
-        z_axis_label = "ACL PL Strain (%)"
+        z_axis_label = "ACLpl Strain (%)"
         global_min = aclpl_strain_percent.min()
         global_max = aclpl_strain_percent.max()
 
