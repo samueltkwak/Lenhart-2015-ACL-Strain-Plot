@@ -69,9 +69,16 @@ app.layout = html.Div([
         html.Span("ACLam", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginLeft': '16px'})
     ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '20px', 'gap': '10px'}),
     html.Div([
-        dcc.Graph(
-            id='surface-plot',
-            style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+        dcc.Loading(
+            id="loading-graph",
+            type="default",  # or "circle", "dot", "cube"
+            children=[
+                dcc.Graph(
+                    id='surface-plot',
+                    style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+                )
+            ],
+            style={'width': '100%'}
         ),
     ], style={
         'width': '70vw',
@@ -179,9 +186,9 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
             xaxis_title=x_axis_label,
             yaxis_title=y_axis_label,
             zaxis_title=z_axis_label,
-            xaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[min(unique_x), max(unique_x)]),
-            yaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[min(unique_y), max(unique_y)]),
-            zaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[global_min, global_max]),
+            xaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[min(unique_x), max(unique_x)]),
+            yaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[min(unique_y), max(unique_y)]),
+            zaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[global_min, global_max]),
             aspectmode='cube',
             camera=camera
         ),
