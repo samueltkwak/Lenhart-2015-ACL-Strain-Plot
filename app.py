@@ -51,7 +51,7 @@ def get_z_matrix(selected_flexion, selected_anterior, selected_lateral, strain_c
         for j, x_val in enumerate(unique_x):
             mask = (filtered_data.iloc[:, 1] == x_val) & (filtered_data.iloc[:, 2] == y_val)
             if mask.any():
-                z_matrix[i, j] = filtered_data[mask].iloc[0, strain_col] * 100
+                z_matrix[i, j] = filtered_data[mask][strain_col].iloc[0] * 100
     return z_matrix
 
 app = dash.Dash(__name__)
