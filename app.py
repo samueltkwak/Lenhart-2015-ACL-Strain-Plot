@@ -83,25 +83,25 @@ app.layout = html.Div([
             style={'width': '100%', 'height': '65vh', 'margin': 'auto', 'marginBottom':'0px'}
         ),
     ], style={
-        'width': '70vw',
+        'width': '100%',
         'margin': 'auto',
         'display': 'block',
         'padding': '0px',
         'marginBottom': '0px'
     }),
     html.Div([
-        html.Label(scroll_bar1_label, style={'fontSize': '16px'}),
+        html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
         dcc.Slider(
             id='flexion-slider',
             min=0,
             max=len(unique_knee_flexion_values)-1,
             value=0,
+            step=1,  # or just omit this line, as 1 is the default
             marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values) if val % 10 == 0},
-            step=None,
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar2_label, style={'fontSize': '16px'}),
+        html.Label(scroll_bar2_label, style={'fontSize': '20px'}),
         dcc.Slider(
             id='anterior-slider',
             min=0,
@@ -112,7 +112,7 @@ app.layout = html.Div([
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar3_label, style={'fontSize': '16px'}),
+        html.Label(scroll_bar3_label, style={'fontSize': '20px'}),
         dcc.Slider(
             id='lateral-slider',
             min=0,
@@ -128,6 +128,7 @@ app.layout = html.Div([
 @app.callback(
     Output('surface-plot', 'figure'),
     Output('camera-store', 'data'),
+    Output('loading-message','children'),
     [
         Input('z-axis-toggle', 'value'),
         Input('flexion-slider', 'value'),
@@ -195,7 +196,7 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
         margin=dict(l=75, r=75, t=75, b=120)
     )
 
-    return fig, camera
+    return fig, camera, ""
 
 if __name__ == '__main__':
     app.run(debug=True)
