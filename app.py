@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, State, callback_context
 import dash_daq as daq
 import pandas as pd
 import numpy as np
@@ -69,6 +69,7 @@ app.layout = html.Div([
         'display': 'block',
         'padding': '0px'
     }),
+    dcc.Store(id='camera-store', data=None),
     html.Div([
         html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
         dcc.Slider(
@@ -107,10 +108,15 @@ app.layout = html.Div([
 
 @app.callback(
     Output('surface-plot', 'figure'),
-    Input('z-axis-toggle', 'value'),
-    Input('flexion-slider', 'value'),
-    Input('anterior-slider', 'value'),
-    Input('lateral-slider', 'value')
+    Output('camera-store', 'data'),
+    [
+        Input('z-axis-toggle', 'value'),
+        Input('flexion-slider', 'value'),
+        Input('anterior-slider', 'value'),
+        Input('lateral-slider', 'value'),
+        Input('surface-plot', 'relayoutData')
+    ],
+    State('camera-store', 'data')
 )
 def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
     flexion = unique_knee_flexion_values[flexion_ix]
@@ -165,7 +171,12 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
         ),
         margin=dict(l=75, r=75, t=75, b=120)
     )
-    return fig
+    if relayoutData and 'scene.camera' in relayoutData:
+        camera = relayoutData['scene.camera']
+    
+    fig.update_layout(scene_camera=camera)
+    
+    return fig, camera
 
 if __name__ == '__main__':
     app.run(debug=True)
