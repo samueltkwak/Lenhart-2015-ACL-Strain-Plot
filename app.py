@@ -69,17 +69,11 @@ app.layout = html.Div([
     ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '20px', 'gap': '10px'}),
     dcc.Store(id='camera-store', data=None),
     html.Div([
-        dcc.Loading(
-            id="custom-loading",
-            type="default",  # "circle", "dot", "cube" also available
-            children=[
-                dcc.Graph(
-                    id='surface-plot',
-                    style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
-                )
-            ],
-            style={"marginBottom": "10px"}
-        )
+        html.Div(id='loading-message', style={'height': '30px', 'textAlign': 'center'}),
+        dcc.Graph(
+            id='surface-plot',
+            style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+        ),
     ], style={
         'width': '70vw',
         'margin': 'auto',
