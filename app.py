@@ -134,15 +134,15 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
     lateral = unique_lateral_translation_values[lateral_ix]
 
     if toggle_value:
-        strain_col = 18
+        strain_col = "ACLam.strain"
         z_axis_label = "ACLam Strain (%)"
         global_min = aclam_strain_percent.min()
         global_max = aclam_strain_percent.max()
     else:
-        strain_col = 17
+        strain_col = "ACLpl.strain"
         z_axis_label = "ACLpl Strain (%)"
         global_min = aclpl_strain_percent.min()
-        global_max = aclpl_strain_percent.max()
+    global_max = aclpl_strain_percent.max()
 
     z_matrix = get_z_matrix(flexion, anterior, lateral, strain_col)
     x_grid, y_grid = np.meshgrid(unique_x, unique_y)
