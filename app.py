@@ -67,61 +67,79 @@ app.layout = html.Div([
             style={'display': 'inline-block'}
         ),
         html.Span("ACLam", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginLeft': '16px'})
-    ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '20px', 'gap': '10px'}),
+    ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '16px', 'gap': '10px'}),
+
+    dcc.Store(id='camera-store', data=None),
+
+    # Main block containing loading spinner, graph, and sliders
     html.Div([
+        # Animated loading spinner above the graph
         dcc.Loading(
-            id="loading-graph",
-            type="default",  # or "circle", "dot", "cube"
-            children=[
-                dcc.Graph(
-                    id='surface-plot',
-                    style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
-                )
-            ],
-            style={'width': '100%'}
+            id="custom-loading",
+            type="default",  # "circle", "dot", "cube" also available
+            children=[html.Div(id="loading-message")],
+            style={"marginBottom": "8px"}
         ),
+
+        # The figure itself
+        dcc.Graph(
+            id='surface-plot',
+            style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+        ),
+
+        # Sliders grouped tightly below the graph
+        html.Div([
+            html.Label(scroll_bar1_label, style={'fontSize': '18px', 'marginBottom': '4px'}),
+            dcc.Slider(
+                id='flexion-slider',
+                min=0,
+                max=len(unique_knee_flexion_values)-1,
+                value=0,
+                marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values)},
+                step=None,
+                included=False,
+                tooltip={"placement": "bottom", "always_visible": False}
+            ),
+            html.Br(),
+            html.Label(scroll_bar2_label, style={'fontSize': '18px', 'marginBottom': '4px'}),
+            dcc.Slider(
+                id='anterior-slider',
+                min=0,
+                max=len(unique_anterior_translation_values)-1,
+                value=0,
+                marks={i: str(val) for i, val in enumerate(unique_anterior_translation_values)},
+                step=None,
+                included=False,
+                tooltip={"placement": "bottom", "always_visible": False}
+            ),
+            html.Br(),
+            html.Label(scroll_bar3_label, style={'fontSize': '18px', 'marginBottom': '4px'}),
+            dcc.Slider(
+                id='lateral-slider',
+                min=0,
+                max=len(unique_lateral_translation_values)-1,
+                value=0,
+                marks={i: str(val) for i, val in enumerate(unique_lateral_translation_values)},
+                step=None,
+                included=False,
+                tooltip={"placement": "bottom", "always_visible": False}
+            ),
+        ], style={
+            'padding': '8px',
+            'marginTop': '8px',
+            'width': '98%',
+            'margin': 'auto',
+            'background': 'transparent'
+        }),
     ], style={
         'width': '70vw',
         'margin': 'auto',
         'display': 'block',
-        'padding': '0px'
+        'padding': '0px',
+        'background': 'transparent'
     }),
-    dcc.Store(id='camera-store', data=None),
-    html.Div([
-        html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
-        dcc.Slider(
-            id='flexion-slider',
-            min=0,
-            max=len(unique_knee_flexion_values)-1,
-            value=0,
-            marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values)},
-            step=None,
-            included=False
-        ),
-        html.Br(),
-        html.Label(scroll_bar2_label, style={'fontSize': '20px'}),
-        dcc.Slider(
-            id='anterior-slider',
-            min=0,
-            max=len(unique_anterior_translation_values)-1,
-            value=0,
-            marks={i: str(val) for i, val in enumerate(unique_anterior_translation_values)},
-            step=None,
-            included=False
-        ),
-        html.Br(),
-        html.Label(scroll_bar3_label, style={'fontSize': '20px'}),
-        dcc.Slider(
-            id='lateral-slider',
-            min=0,
-            max=len(unique_lateral_translation_values)-1,
-            value=0,
-            marks={i: str(val) for i, val in enumerate(unique_lateral_translation_values)},
-            step=None,
-            included=False
-        ),
-    ], style={'padding': '20px', 'marginTop': '30px', 'width': '60vw', 'margin': 'auto'})
 ])
+
 
 @app.callback(
     Output('surface-plot', 'figure'),
