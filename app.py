@@ -5,15 +5,25 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-df = pd.read_parquet('https://osf.io/download/68d2d1d44ccad223871e45ce/')
+columns_needed = [
+    'knee_flexion', 'knee_adduction', 'knee_introtation',
+    'knee_anttrans', 'knee_medtrans', 'ACLpl.strain', 'ACLam.strain'
+]
+df = pd.read_parquet('https://osf.io/download/68d2d1d44ccad223871e45ce/', columns=columns_needed)
 
-knee_flexion_angle = df.iloc[:, 0]
-knee_adduction_angle = df.iloc[:, 1]
-knee_internal_rotation_angle = df.iloc[:, 2]
-knee_posterior_translation = -df.iloc[:, 3]
-knee_medial_translation = -df.iloc[:, 4]
-aclpl_strain_raw = df.iloc[:, 17]
-aclam_strain_raw = df.iloc[:, 18]
+for col in df.columns:
+    if pd.api.types.is_float_dtype(df[col]):
+        df[col] = df[col].astype('float32')
+    elif pd.api.types.is_integer_dtype(df[col]):
+        df[col] = df[col].astype('int32')
+
+knee_flexion_angle = df["knee_flexion"]
+knee_adduction_angle = df["knee_adduction"]
+knee_internal_rotation_angle = df["knee_introtation"]
+knee_posterior_translation = -df["knee_anttrans"]
+knee_medial_translation = -df["knee_medtrans"]
+aclpl_strain_raw = df["ACLpl.strain"]
+aclam_strain_raw = df["ACLam.strain"]
 
 aclpl_strain_percent = aclpl_strain_raw * 100
 aclam_strain_percent = aclam_strain_raw * 100
