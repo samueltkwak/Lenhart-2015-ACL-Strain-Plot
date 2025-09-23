@@ -58,7 +58,7 @@ app = dash.Dash(__name__)
 server = app.server
 
 app.layout = html.Div([
-    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '30px', 'marginBottom': '10px'}),
+    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '24px', 'marginBottom': '10px'}),
     html.Div([
         html.Span("ACLpl", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginRight': '16px'}),
         daq.ToggleSwitch(
@@ -90,7 +90,7 @@ app.layout = html.Div([
         'marginBottom': '0px'
     }),
     html.Div([
-        html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar1_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='flexion-slider',
             min=0,
@@ -101,7 +101,7 @@ app.layout = html.Div([
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar2_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar2_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='anterior-slider',
             min=0,
@@ -112,7 +112,7 @@ app.layout = html.Div([
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar3_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar3_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='lateral-slider',
             min=0,
@@ -165,7 +165,14 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
         colorscale='Balance',
         cmin=global_min,
         cmax=global_max,
-        colorbar=dict(title=z_axis_label, tickfont=dict(size=18),len=0.8)
+        colorbar=dict(
+            title=dict(
+                text=z_axis_label,
+                font=dict(size=16)
+            ),
+            tickfont=dict(size=16),
+            len=0.8
+        )
     ))
     fig.add_trace(go.Surface(
         x=x_grid,
@@ -187,9 +194,9 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
             xaxis_title=x_axis_label,
             yaxis_title=y_axis_label,
             zaxis_title=z_axis_label,
-            xaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[min(unique_x), max(unique_x)]),
-            yaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[min(unique_y), max(unique_y)]),
-            zaxis=dict(title_font=dict(size=20), tickfont=dict(size=14), range=[global_min, global_max]),
+            xaxis=dict(title_font=dict(size=16), tickfont=dict(size=14), range=[min(unique_x), max(unique_x)]),
+            yaxis=dict(title_font=dict(size=16), tickfont=dict(size=14), range=[min(unique_y), max(unique_y)]),
+            zaxis=dict(title_font=dict(size=16), tickfont=dict(size=14), range=[global_min, global_max]),
             aspectmode='cube',
             camera=camera
         ),
