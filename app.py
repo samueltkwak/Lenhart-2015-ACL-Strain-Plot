@@ -118,7 +118,7 @@ app.layout = html.Div([
     ],
     State('camera-store', 'data')
 )
-def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
+def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutData, stored_camera):
     flexion = unique_knee_flexion_values[flexion_ix]
     anterior = unique_anterior_translation_values[anterior_ix]
     lateral = unique_lateral_translation_values[lateral_ix]
@@ -156,6 +156,12 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
         opacity=0.5,
         name='z=0 plane'
     ))
+
+    # Camera logic: default camera, then use stored, then update if user moves camera
+    camera = stored_camera if stored_camera else dict(eye=dict(x=1.2, y=1.2, z=1.2))
+    if relayoutData and 'scene.camera' in relayoutData:
+        camera = relayoutData['scene.camera']
+
     fig.update_layout(
         title="ACL Strain 3D Surface Visualization",
         font=dict(size=18, family="Arial, sans-serif"),
@@ -167,15 +173,11 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix):
             yaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[min(unique_y), max(unique_y)]),
             zaxis=dict(title_font=dict(size=20), tickfont=dict(size=18), range=[global_min, global_max]),
             aspectmode='cube',
-            camera=dict(eye=dict(x=1.2, y=1.2, z=1.2))
+            camera=camera
         ),
         margin=dict(l=75, r=75, t=75, b=120)
     )
-    if relayoutData and 'scene.camera' in relayoutData:
-        camera = relayoutData['scene.camera']
-    
-    fig.update_layout(scene_camera=camera)
-    
+
     return fig, camera
 
 if __name__ == '__main__':
