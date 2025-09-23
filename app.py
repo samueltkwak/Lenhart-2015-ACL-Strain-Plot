@@ -80,27 +80,28 @@ app.layout = html.Div([
         # --- Your graph ---
         dcc.Graph(
             id='surface-plot',
-            style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
+            style={'width': '100%', 'height': '65vh', 'margin': 'auto', 'marginBottom':'0px'}
         ),
     ], style={
         'width': '70vw',
         'margin': 'auto',
         'display': 'block',
-        'padding': '0px'
+        'padding': '0px',
+        'marginBottom': '0px'
     }),
     html.Div([
-        html.Label(scroll_bar1_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar1_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='flexion-slider',
             min=0,
             max=len(unique_knee_flexion_values)-1,
             value=0,
-            marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values)},
+            marks={i: str(val) for i, val in enumerate(unique_knee_flexion_values) if val % 10 == 0},
             step=None,
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar2_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar2_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='anterior-slider',
             min=0,
@@ -111,7 +112,7 @@ app.layout = html.Div([
             included=False
         ),
         html.Br(),
-        html.Label(scroll_bar3_label, style={'fontSize': '20px'}),
+        html.Label(scroll_bar3_label, style={'fontSize': '16px'}),
         dcc.Slider(
             id='lateral-slider',
             min=0,
@@ -121,7 +122,7 @@ app.layout = html.Div([
             step=None,
             included=False
         ),
-    ], style={'padding': '20px', 'marginTop': '30px', 'width': '60vw', 'margin': 'auto'})
+    ], style={'padding': '20px', 'marginTop': '30px', 'width': '100%', 'margin': 'auto'})
 ])
 
 @app.callback(
@@ -163,7 +164,7 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
         colorscale='Balance',
         cmin=global_min,
         cmax=global_max,
-        colorbar=dict(title=z_axis_label, tickfont=dict(size=18))
+        colorbar=dict(title=z_axis_label, tickfont=dict(size=18),len=0.8)
     ))
     fig.add_trace(go.Surface(
         x=x_grid,
