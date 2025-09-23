@@ -171,7 +171,9 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
                 font=dict(size=16)
             ),
             tickfont=dict(size=16),
-            len=0.8
+            len=0.8,
+            x=1.05
+            xanchor='left'
         )
     ))
     fig.add_trace(go.Surface(
