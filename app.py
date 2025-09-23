@@ -58,6 +58,7 @@ app = dash.Dash(__name__)
 server = app.server
 
 app.layout = html.Div([
+    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '30px', 'marginBottom': '10px'}),
     html.Div([
         html.Span("ACLpl", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginRight': '16px'}),
         daq.ToggleSwitch(
@@ -69,7 +70,14 @@ app.layout = html.Div([
     ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'marginBottom': '20px', 'gap': '10px'}),
     dcc.Store(id='camera-store', data=None),
     html.Div([
-        html.Div(id='loading-message', style={'height': '30px', 'textAlign': 'center'}),
+        # --- Loading spinner above the graph ---
+        dcc.Loading(
+            id="custom-loading",
+            type="default",  # "default", "dot", "cube", "circle" -- pick your favorite
+            children=[html.Div(id="loading-message", style={'height': '30px'})],
+            style={"marginBottom": "0px"}
+        ),
+        # --- Your graph ---
         dcc.Graph(
             id='surface-plot',
             style={'width': '100%', 'height': '65vh', 'margin': 'auto'}
@@ -173,8 +181,6 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
         camera = relayoutData['scene.camera']
 
     fig.update_layout(
-        title="ACL Strain 3D Surface Visualization",
-        font=dict(size=18, family="Arial, sans-serif"),
         scene=dict(
             xaxis_title=x_axis_label,
             yaxis_title=y_axis_label,
