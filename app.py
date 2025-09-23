@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-df = pd.read_csv('https://osf.io/download/68caf215f85b997fde4140a0/', compression='zip', sep='\t')
+df = pd.read_parquet('https://osf.io/6z3ph/files/osfstorage/68d2d1d44ccad223871e45ce')
 
 knee_flexion_angle = df.iloc[:, 0]
 knee_adduction_angle = df.iloc[:, 1]
