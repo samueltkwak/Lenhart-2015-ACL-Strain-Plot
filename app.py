@@ -172,7 +172,7 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
             ),
             tickfont=dict(size=16),
             len=0.8,
-            x=1.05
+            x=1.05,
             xanchor='left'
         )
     ))
