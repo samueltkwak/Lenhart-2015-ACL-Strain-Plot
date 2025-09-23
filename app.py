@@ -80,7 +80,7 @@ app.layout = html.Div([
         # --- Your graph ---
         dcc.Graph(
             id='surface-plot',
-            style={'width': '900px', 'height': '60vh', 'margin': 'auto', 'marginTop':'0px', 'marginBottom':'0px'}
+            style={'width': '100vh', 'maxWidth': '900px', 'height': '60vh', 'margin': 'auto', 'marginTop':'0px', 'marginBottom':'0px'}
         ),
     ], style={
         'width': '100%',
