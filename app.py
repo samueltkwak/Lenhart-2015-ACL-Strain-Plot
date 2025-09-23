@@ -80,13 +80,14 @@ app.layout = html.Div([
         # --- Your graph ---
         dcc.Graph(
             id='surface-plot',
-            style={'width': '100%', 'height': '65vh', 'margin': 'auto', 'marginBottom':'0px'}
+            style={'width': '40%', 'height': '60vh', 'margin': 'auto', 'marginTop':'0px', 'marginBottom':'0px'}
         ),
     ], style={
         'width': '100%',
         'margin': 'auto',
         'display': 'block',
         'padding': '0px',
+        'marginTop': '0px',
         'marginBottom': '0px'
     }),
     html.Div([
@@ -122,7 +123,7 @@ app.layout = html.Div([
             step=None,
             included=False
         ),
-    ], style={'padding': '20px', 'marginTop': '30px', 'width': '100%', 'margin': 'auto'})
+    ], style={'padding': '0px', 'marginTop': '0px', 'width': '100%', 'margin': 'auto'})
 ])
 
 @app.callback(
@@ -168,12 +169,8 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
         colorbar=dict(
             title=dict(
                 text=z_axis_label,
-                font=dict(size=16)
-            ),
-            tickfont=dict(size=16),
-            len=0.8,
-            x=1.05,
-            xanchor='left'
+                font=dict(size=16)),
+            tickfont=dict(size=16)
         )
     ))
     fig.add_trace(go.Surface(
@@ -200,9 +197,9 @@ def update_surface(toggle_value, flexion_ix, anterior_ix, lateral_ix, relayoutDa
             yaxis=dict(title_font=dict(size=16), tickfont=dict(size=14), range=[min(unique_y), max(unique_y)]),
             zaxis=dict(title_font=dict(size=16), tickfont=dict(size=14), range=[global_min, global_max]),
             aspectmode='cube',
-            camera=camera
+            camera=camera,
         ),
-        margin=dict(l=75, r=75, t=75, b=120)
+        margin=dict(l=75, r=75, t=75, b=0)
     )
 
     return fig, camera, ""
