@@ -58,7 +58,7 @@ app = dash.Dash(__name__)
 server = app.server
 
 app.layout = html.Div([
-    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '24px', 'marginBottom': '10px'}),
+    html.H2("ACL Strain 3D Surface Visualization", style={'fontSize': '24px', 'marginBottom': '10px', 'textAlign': 'center'}),
     html.Div([
         html.Span("ACLpl", style={'fontSize': '18px', 'fontWeight': 'bold', 'marginRight': '16px'}),
         daq.ToggleSwitch(
