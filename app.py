@@ -34,16 +34,61 @@ KNEE_JOINT_CENTER = np.array([0.0, 0.0, 0.0])
 ANTERIOR_ANATOMY_CAMERA = dict(eye=dict(x=2.35, y=0.0, z=0.15))
 SURFACE_CAMERA = dict(eye=dict(x=-1.85, y=-1.85, z=0.75), center=dict(x=-0.06, y=-0.04, z=-0.08))
 
-X_GRID, Y_GRID = np.meshgrid(ADDUCTION_VALUES, INTERNAL_ROTATION_VALUES)
-
 scroll_bar1_label = "Knee Flexion (deg)"
-x_axis_label = "Adduction"
-y_axis_label = "Internal Rotation"
 translation_pad_x_label = "M/L Translation (mm): + Lateral"
 translation_pad_y_label = "A/P Translation (mm): + Anterior"
 rotation_pad_x_label = "Adduction (deg): + Adduction"
 rotation_pad_y_label = "Internal Rotation (deg): + Internal"
 proximal_slider_label = "Proximal Translation (mm)"
+
+SURFACE_DOF_OPTIONS = {
+    "flexion": {
+        "label": "Flexion",
+        "unit": "deg",
+        "values": tuple(FLEXION_VALUES),
+        "ticks": (0, 30, 60, 90),
+        "param": "flexion",
+    },
+    "adduction": {
+        "label": "Adduction",
+        "unit": "deg",
+        "values": tuple(ADDUCTION_VALUES),
+        "ticks": (-20, -10, 0, 10, 20),
+        "param": "adduction",
+    },
+    "internal_rotation": {
+        "label": "Internal Rotation",
+        "unit": "deg",
+        "values": tuple(INTERNAL_ROTATION_VALUES),
+        "ticks": (-20, -10, 0, 10, 20),
+        "param": "internal_rotation",
+    },
+    "anterior_translation": {
+        "label": "Anterior Translation",
+        "unit": "mm",
+        "values": tuple(ANTERIOR_TRANSLATION_VALUES),
+        "ticks": (-10, 0, 10),
+        "param": "anterior_translation",
+    },
+    "lateral_translation": {
+        "label": "Lateral Translation",
+        "unit": "mm",
+        "values": tuple(LATERAL_TRANSLATION_VALUES),
+        "ticks": (-10, 0, 10),
+        "param": "lateral_translation",
+    },
+    "proximal_translation": {
+        "label": "Proximal Translation",
+        "unit": "mm",
+        "values": tuple(PROXIMAL_TRANSLATION_VALUES),
+        "ticks": (-5, 0, 2),
+        "param": "proximal_translation",
+    },
+}
+SURFACE_DOF_DROPDOWN_OPTIONS = [
+    {"label": definition["label"], "value": key}
+    for key, definition in SURFACE_DOF_OPTIONS.items()
+]
 
 
 def acl_fiber_color(fiber_name):
@@ -251,21 +296,79 @@ def calculate_placeholder_strain(
 def get_z_matrix(
     model_mode,
     bundle,
+    x_axis,
+    y_axis,
     flexion,
+    adduction,
+    internal_rotation,
     anterior_translation,
     lateral_translation,
     proximal_translation,
 ):
+    current_values = {
+        "flexion": flexion,
+        "adduction": adduction,
+        "internal_rotation": internal_rotation,
+        "anterior_translation": anterior_translation,
+        "lateral_translation": lateral_translation,
+        "proximal_translation": proximal_translation,
+    }
+    x_definition = SURFACE_DOF_OPTIONS[x_axis]
+    y_definition = SURFACE_DOF_OPTIONS[y_axis]
+    x_grid, y_grid = np.meshgrid(
+        np.array(x_definition["values"]),
+        np.array(y_definition["values"]),
+    )
+    surface_values = dict(current_values)
+    surface_values[x_definition["param"]] = x_grid
+    surface_values[y_definition["param"]] = y_grid
+
     return calculate_placeholder_strain(
         model_mode=model_mode,
         bundle=bundle,
-        flexion=flexion,
-        anterior_translation=anterior_translation,
-        lateral_translation=lateral_translation,
-        proximal_translation=proximal_translation,
-        adduction=X_GRID,
-        internal_rotation=Y_GRID,
+        **surface_values,
     )
+
+
+def current_surface_values(
+    flexion,
+    adduction,
+    internal_rotation,
+    anterior_translation,
+    lateral_translation,
+    proximal_translation,
+):
+    return {
+        "flexion": flexion,
+        "adduction": adduction,
+        "internal_rotation": internal_rotation,
+        "anterior_translation": anterior_translation,
+        "lateral_translation": lateral_translation,
+        "proximal_translation": proximal_translation,
+    }
+
+
+def surface_axis_title(axis):
+    definition = SURFACE_DOF_OPTIONS[axis]
+    return f"{definition['label']} ({definition['unit']})"
+
+
+def fallback_surface_axis(excluded_axis):
+    for axis in SURFACE_DOF_OPTIONS:
+        if axis != excluded_axis:
+            return axis
+    return "internal_rotation"
+
+
+def surface_dof_dropdown_options(disabled_axis=None):
+    return [
+        {
+            "label": definition["label"],
+            "value": key,
+            "disabled": key == disabled_axis,
+        }
+        for key, definition in SURFACE_DOF_OPTIONS.items()
+    ]
 
 
 def shared_z_range_for_surfaces(*z_matrices):
@@ -892,6 +995,37 @@ app.layout = html.Div([
     ], className="visual-loading-overlay"),
     html.Div([
         html.Div([
+            html.Label("Surface X Axis", style={"fontSize": "13px", "fontWeight": "600"}),
+            dcc.Dropdown(
+                id="surface-x-axis",
+                options=SURFACE_DOF_DROPDOWN_OPTIONS,
+                value="adduction",
+                clearable=False,
+                searchable=False,
+                style={"fontSize": "13px"},
+            ),
+        ], style={"width": "220px"}),
+        html.Div([
+            html.Label("Surface Y Axis", style={"fontSize": "13px", "fontWeight": "600"}),
+            dcc.Dropdown(
+                id="surface-y-axis",
+                options=SURFACE_DOF_DROPDOWN_OPTIONS,
+                value="internal_rotation",
+                clearable=False,
+                searchable=False,
+                style={"fontSize": "13px"},
+            ),
+        ], style={"width": "220px"}),
+    ], style={
+        "display": "flex",
+        "gap": "12px",
+        "justifyContent": "center",
+        "alignItems": "end",
+        "margin": "0 auto 6px",
+        "flexWrap": "wrap",
+    }),
+    html.Div([
+        html.Div([
             html.Div([
                 dcc.Graph(
                     id="surface-plot-pl",
@@ -1235,12 +1369,9 @@ def update_surface_selection(rotation_value, reset_clicks, current_selection):
 def make_surface_figure(
     model_mode,
     bundle,
-    flexion,
-    anterior_translation,
-    lateral_translation,
-    proximal_translation,
-    selected_adduction,
-    selected_rotation,
+    current_values,
+    x_axis,
+    y_axis,
     camera,
     z_range,
     z_matrix,
@@ -1248,10 +1379,16 @@ def make_surface_figure(
 ):
     z_axis_label = "Strain (%)"
     global_min, global_max = z_range
+    x_definition = SURFACE_DOF_OPTIONS[x_axis]
+    y_definition = SURFACE_DOF_OPTIONS[y_axis]
+    x_values = x_definition["values"]
+    y_values = y_definition["values"]
+    selected_x = current_values[x_axis]
+    selected_y = current_values[y_axis]
     fig = go.Figure()
     fig.add_trace(go.Surface(
-        x=ADDUCTION_VALUES,
-        y=INTERNAL_ROTATION_VALUES,
+        x=x_values,
+        y=y_values,
         z=z_matrix,
         colorscale="Balance",
         cmin=global_min,
@@ -1279,23 +1416,18 @@ def make_surface_figure(
     selected_strain = calculate_placeholder_strain(
         model_mode=model_mode,
         bundle=bundle,
-        flexion=flexion,
-        anterior_translation=anterior_translation,
-        lateral_translation=lateral_translation,
-        proximal_translation=proximal_translation,
-        adduction=selected_adduction,
-        internal_rotation=selected_rotation,
+        **current_values,
     )
     fig.add_trace(go.Scatter3d(
-        x=[selected_adduction],
-        y=[selected_rotation],
+        x=[selected_x],
+        y=[selected_y],
         z=[selected_strain],
         mode="markers",
         marker=dict(size=5, color="#111111", line=dict(width=2, color="#ffffff")),
         name="Selected kinematics",
         hovertemplate=(
-            "Adduction: %{x} deg<br>"
-            "Rotation: %{y} deg<br>"
+            f"{x_definition['label']}: %{{x}} {x_definition['unit']}<br>"
+            f"{y_definition['label']}: %{{y}} {y_definition['unit']}<br>"
             "Strain: %{z:.2f}%<extra></extra>"
         ),
         showlegend=False,
@@ -1304,20 +1436,20 @@ def make_surface_figure(
         scene=dict(
             zaxis_title=z_axis_label,
             xaxis=dict(
-                title=dict(text=x_axis_label, font=dict(size=10)),
+                title=dict(text=surface_axis_title(x_axis), font=dict(size=10)),
                 tickfont=dict(size=11),
-                tickvals=[-20, -10, 0, 10, 20],
+                tickvals=list(x_definition["ticks"]),
                 ticks="outside",
                 ticklen=0,
-                range=[min(ADDUCTION_VALUES), max(ADDUCTION_VALUES)],
+                range=[min(x_values), max(x_values)],
             ),
             yaxis=dict(
-                title=dict(text=y_axis_label, font=dict(size=10)),
+                title=dict(text=surface_axis_title(y_axis), font=dict(size=10)),
                 tickfont=dict(size=11),
-                tickvals=[-20, -10, 0, 10, 20],
+                tickvals=list(y_definition["ticks"]),
                 ticks="outside",
                 ticklen=0,
-                range=[min(INTERNAL_ROTATION_VALUES), max(INTERNAL_ROTATION_VALUES)],
+                range=[min(y_values), max(y_values)],
             ),
             zaxis=dict(
                 title=dict(text=z_axis_label, font=dict(size=10)),
@@ -1364,6 +1496,20 @@ def store_surface_camera(pl_relayout_data, am_relayout_data, stored_camera):
 
 
 @app.callback(
+    Output("surface-y-axis", "options"),
+    Output("surface-y-axis", "value"),
+    Input("surface-x-axis", "value"),
+    State("surface-y-axis", "value"),
+)
+def update_surface_y_axis_options(x_axis, current_y_axis):
+    if not x_axis:
+        x_axis = "adduction"
+    if not current_y_axis or current_y_axis == x_axis:
+        current_y_axis = fallback_surface_axis(x_axis)
+    return surface_dof_dropdown_options(disabled_axis=x_axis), current_y_axis
+
+
+@app.callback(
     Output("surface-plot-pl", "figure"),
     Output("surface-plot-am", "figure"),
     Output("surface-strain-legend", "children"),
@@ -1372,6 +1518,8 @@ def store_surface_camera(pl_relayout_data, am_relayout_data, stored_camera):
         Input("translation-store", "data"),
         Input("proximal-slider", "value"),
         Input("surface-selection-store", "data"),
+        Input("surface-x-axis", "value"),
+        Input("surface-y-axis", "value"),
     ],
     State("camera-store", "data"),
 )
@@ -1380,6 +1528,8 @@ def update_surface_plots(
     translation,
     proximal_ix,
     surface_selection,
+    x_axis,
+    y_axis,
     stored_camera,
 ):
     flexion = FLEXION_VALUES[flexion_ix]
@@ -1391,13 +1541,29 @@ def update_surface_plots(
     surface_selection = surface_selection or SURFACE_SELECTION_DEFAULT
     selected_adduction = surface_selection["adduction"]
     selected_rotation = surface_selection["rotation"]
+    x_axis = x_axis if x_axis in SURFACE_DOF_OPTIONS else "adduction"
+    y_axis = y_axis if y_axis in SURFACE_DOF_OPTIONS else "internal_rotation"
+    if y_axis == x_axis:
+        y_axis = fallback_surface_axis(x_axis)
+    current_values = current_surface_values(
+        flexion=flexion,
+        adduction=selected_adduction,
+        internal_rotation=selected_rotation,
+        anterior_translation=anterior_translation,
+        lateral_translation=lateral_translation,
+        proximal_translation=proximal_translation,
+    )
 
     camera = stored_camera if stored_camera else SURFACE_CAMERA
 
     surface_pl_z = get_z_matrix(
         model_mode=model_mode,
         bundle="ACLpl",
+        x_axis=x_axis,
+        y_axis=y_axis,
         flexion=flexion,
+        adduction=selected_adduction,
+        internal_rotation=selected_rotation,
         anterior_translation=anterior_translation,
         lateral_translation=lateral_translation,
         proximal_translation=proximal_translation,
@@ -1405,7 +1571,11 @@ def update_surface_plots(
     surface_am_z = get_z_matrix(
         model_mode=model_mode,
         bundle="ACLam",
+        x_axis=x_axis,
+        y_axis=y_axis,
         flexion=flexion,
+        adduction=selected_adduction,
+        internal_rotation=selected_rotation,
         anterior_translation=anterior_translation,
         lateral_translation=lateral_translation,
         proximal_translation=proximal_translation,
@@ -1415,12 +1585,9 @@ def update_surface_plots(
     surface_pl_fig = make_surface_figure(
         model_mode=model_mode,
         bundle="ACLpl",
-        flexion=flexion,
-        anterior_translation=anterior_translation,
-        lateral_translation=lateral_translation,
-        proximal_translation=proximal_translation,
-        selected_adduction=selected_adduction,
-        selected_rotation=selected_rotation,
+        current_values=current_values,
+        x_axis=x_axis,
+        y_axis=y_axis,
         camera=camera,
         z_range=shared_z_range,
         z_matrix=surface_pl_z,
@@ -1429,12 +1596,9 @@ def update_surface_plots(
     surface_am_fig = make_surface_figure(
         model_mode=model_mode,
         bundle="ACLam",
-        flexion=flexion,
-        anterior_translation=anterior_translation,
-        lateral_translation=lateral_translation,
-        proximal_translation=proximal_translation,
-        selected_adduction=selected_adduction,
-        selected_rotation=selected_rotation,
+        current_values=current_values,
+        x_axis=x_axis,
+        y_axis=y_axis,
         camera=camera,
         z_range=shared_z_range,
         z_matrix=surface_am_z,
