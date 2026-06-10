@@ -38,6 +38,11 @@
         };
     }
 
+    function syncDotFromInput(pad, dot, input) {
+        var current = readInputValue(input);
+        setDotPosition(pad, dot, current.lateral, current.anterior);
+    }
+
     function publishTranslation(input, anterior, lateral) {
         setInputValue(input, anterior + "," + lateral);
         if (window.dash_clientside && window.dash_clientside.set_props) {
@@ -71,14 +76,26 @@
         var pad = document.getElementById("translation-pad-control");
         var dot = document.getElementById("translation-dot");
         var input = document.getElementById("translation-input");
+        var resetButton = document.getElementById("reset-kinematics");
 
         if (!pad || !dot || !input || pad.dataset.initialized === "true") {
             return;
         }
 
         pad.dataset.initialized = "true";
-        var initial = readInputValue(input);
-        setDotPosition(pad, dot, initial.lateral, initial.anterior);
+        syncDotFromInput(pad, dot, input);
+        input.addEventListener("input", function () {
+            syncDotFromInput(pad, dot, input);
+        });
+        input.addEventListener("change", function () {
+            syncDotFromInput(pad, dot, input);
+        });
+        if (resetButton) {
+            resetButton.addEventListener("click", function () {
+                publishTranslation(input, 0, 0);
+                setDotPosition(pad, dot, 0, 0);
+            });
+        }
 
         var dragging = false;
         pad.addEventListener("pointerdown", function (event) {

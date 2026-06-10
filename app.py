@@ -599,14 +599,14 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         label_x = (x_start + x_end) / 2
         mean_annotations.append(dict(
             x=label_x,
-            y=1.03,
+            y=0.97,
             xref="x",
             yref="paper",
             text=f"{group_label} mean {mean_strain:+.1f}%",
             showarrow=False,
-            font=dict(color=color, size=13),
+            font=dict(color=color, size=16),
             xanchor="center",
-            yanchor="bottom",
+            yanchor="top",
         ))
 
         fig.add_trace(go.Scatter(
@@ -809,7 +809,7 @@ server = app.server
 
 app.layout = html.Div([
     html.H2(
-        "ACL Strain 3D Surface Visualization",
+        "ACL Strain Visualizer",
         style={"fontSize": "24px", "marginBottom": "10px", "textAlign": "center"},
     ),
     dcc.Store(id="camera-store", data=None),
@@ -936,6 +936,25 @@ app.layout = html.Div([
         "minWidth": "360px",
     }),
     html.Div([
+        html.Button(
+            "Reset",
+            id="reset-kinematics",
+            n_clicks=0,
+            style={
+                "fontSize": "14px",
+                "padding": "6px 14px",
+                "border": "1px solid #8f8f8f",
+                "background": "#ffffff",
+                "borderRadius": "4px",
+                "cursor": "pointer",
+            },
+        ),
+    ], style={
+        "display": "flex",
+        "justifyContent": "center",
+        "margin": "4px auto 0",
+    }),
+    html.Div([
         html.Div([
             html.Div(translation_pad_y_label, className="pad-axis-label pad-axis-label-y"),
             html.Div(
@@ -999,9 +1018,17 @@ app.layout = html.Div([
 @app.callback(
     Output("translation-store", "data"),
     Input("translation-input", "value"),
+    Input("reset-kinematics", "n_clicks"),
     State("translation-store", "data"),
 )
-def update_translation_store(translation_value, current_translation):
+def update_translation_store(translation_value, reset_clicks, current_translation):
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
+    if trigger == "reset-kinematics":
+        return {
+            "anterior": 0,
+            "lateral": 0,
+        }
+
     if not translation_value:
         return normalized_translation(current_translation)
 
@@ -1017,6 +1044,21 @@ def update_translation_store(translation_value, current_translation):
         "anterior": snap_to_values(anterior_value, ANTERIOR_TRANSLATION_VALUES),
         "lateral": snap_to_values(lateral_value, LATERAL_TRANSLATION_VALUES),
     }
+
+
+@app.callback(
+    Output("flexion-slider", "value"),
+    Output("proximal-slider", "value"),
+    Output("translation-input", "value"),
+    Input("reset-kinematics", "n_clicks"),
+    prevent_initial_call=True,
+)
+def reset_kinematic_configuration(reset_clicks):
+    return (
+        FLEXION_VALUES.index(0),
+        PROXIMAL_TRANSLATION_VALUES.index(0),
+        "0,0",
+    )
 
 
 @app.callback(
@@ -1055,10 +1097,14 @@ def update_translation_controls(translation, proximal_ix):
     Output("surface-selection-store", "data"),
     Input("surface-plot-pl", "clickData"),
     Input("surface-plot-am", "clickData"),
+    Input("reset-kinematics", "n_clicks"),
     State("surface-selection-store", "data"),
 )
-def update_surface_selection(pl_click_data, am_click_data, current_selection):
+def update_surface_selection(pl_click_data, am_click_data, reset_clicks, current_selection):
     trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
+    if trigger == "reset-kinematics":
+        return SURFACE_SELECTION_DEFAULT
+
     click_data = am_click_data if trigger == "surface-plot-am" else pl_click_data
     if not click_data:
         return current_selection or SURFACE_SELECTION_DEFAULT
