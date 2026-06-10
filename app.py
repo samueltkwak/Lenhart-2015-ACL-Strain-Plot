@@ -32,7 +32,7 @@ BONE_LIGHTING = dict(
 BONE_LIGHTPOSITION = dict(x=-0.4, y=-1.2, z=1.8)
 KNEE_JOINT_CENTER = np.array([0.0, 0.0, 0.0])
 ANTERIOR_ANATOMY_CAMERA = dict(eye=dict(x=2.35, y=0.0, z=0.15))
-SURFACE_CAMERA = dict(eye=dict(x=1.45, y=1.45, z=0.95), center=dict(x=-0.06, y=-0.04, z=-0.08))
+SURFACE_CAMERA = dict(eye=dict(x=-1.85, y=-1.85, z=0.75), center=dict(x=-0.06, y=-0.04, z=-0.08))
 
 X_GRID, Y_GRID = np.meshgrid(ADDUCTION_VALUES, INTERNAL_ROTATION_VALUES)
 
@@ -526,6 +526,7 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
     fig = go.Figure()
     max_display_length = 1.0
     bundle_mean_strains = bundle_mean_strains or {}
+    mean_annotations = []
     display_fibers = sorted(
         fibers,
         key=lambda fiber: (
@@ -590,18 +591,23 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         bundle_strains = [display_fibers[index]["strain"] for index in bundle_indices]
         mean_strain = float(bundle_mean_strains.get(bundle_name, np.mean(bundle_strains)))
         mean_display_length = 1 + (mean_strain / 100)
-        bundle_display_lengths = [
-            display_fibers[index]["current_length"] / display_fibers[index]["reference_length"]
-            if display_fibers[index]["reference_length"] else 1.0
-            for index in bundle_indices
-        ]
-        label_y = max(max(bundle_display_lengths), mean_display_length, 1.0) + 0.13
-        max_display_length = max(max_display_length, label_y + 0.12)
+        max_display_length = max(max_display_length, max(mean_display_length, 1.0))
         x_start = min(bundle_indices) - 0.38
         x_end = max(bundle_indices) + 0.38
         group_label = bundle_name.replace("ACL", "").upper()
         color = acl_fiber_color(bundle_name)
         label_x = (x_start + x_end) / 2
+        mean_annotations.append(dict(
+            x=label_x,
+            y=1.03,
+            xref="x",
+            yref="paper",
+            text=f"{group_label} mean {mean_strain:+.1f}%",
+            showarrow=False,
+            font=dict(color=color, size=13),
+            xanchor="center",
+            yanchor="bottom",
+        ))
 
         fig.add_trace(go.Scatter(
             x=[x_start, x_end],
@@ -614,17 +620,6 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
                 f"{bundle_name} mean<br>"
                 f"Mean strain: {mean_strain:.1f}%<extra></extra>"
             ),
-            showlegend=False,
-        ))
-        fig.add_trace(go.Scatter(
-            x=[label_x],
-            y=[label_y],
-            mode="text",
-            text=[f"{group_label} mean {mean_strain:+.1f}%"],
-            textfont=dict(color=color, size=13),
-            textposition="middle center",
-            cliponaxis=False,
-            hoverinfo="skip",
             showlegend=False,
         ))
 
@@ -642,18 +637,19 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
             fixedrange=True,
         ),
         yaxis=dict(
-            range=[-0.06, max_display_length + 0.1],
+            range=[-0.06, max_display_length + 0.28],
             showgrid=False,
             zeroline=False,
             showticklabels=False,
             fixedrange=True,
         ),
-        margin=dict(l=34, r=12, t=42, b=82),
+        margin=dict(l=34, r=12, t=62, b=82),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         hovermode="closest",
         hoverdistance=40,
         uirevision="fiber-panel",
+        annotations=mean_annotations,
     )
     return fig
 
