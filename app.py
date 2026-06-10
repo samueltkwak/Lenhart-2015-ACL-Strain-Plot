@@ -507,7 +507,7 @@ def orientation_label_traces():
     display_x, display_y, display_z = display_coordinates(
         np.array([0.0, 0.0]),
         np.array([0.0, 0.0]),
-        np.array([0.075, -0.075]),
+        np.array([0.045, -0.045]),
     )
     return go.Scatter3d(
         x=display_x,
