@@ -539,6 +539,17 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         current_length = fiber["current_length"]
         current_display_length = current_length / reference_length if reference_length else 1.0
         max_display_length = max(max_display_length, current_display_length)
+        hover_display_length = max(current_display_length, 1.0)
+        hover_y_values = np.linspace(0, hover_display_length, 28)
+
+        fig.add_trace(go.Scatter(
+            x=[index, index],
+            y=[0, 1],
+            mode="lines",
+            line=dict(color="rgba(70, 70, 70, 0.25)", width=12),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
 
         fig.add_trace(go.Scatter(
             x=[index, index],
@@ -554,10 +565,10 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
             showlegend=False,
         ))
         fig.add_trace(go.Scatter(
-            x=[index, index],
-            y=[0, current_display_length],
-            mode="lines",
-            line=dict(color="rgba(0, 0, 0, 0.001)", width=22),
+            x=[index] * len(hover_y_values),
+            y=hover_y_values,
+            mode="markers",
+            marker=dict(color="rgba(0, 0, 0, 0.001)", size=18),
             hovertemplate=(
                 f"{fiber['name']}<br>"
                 f"Strain: {fiber['strain']:.1f}%<br>"
@@ -607,6 +618,7 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
             text=[f"{group_label} mean {mean_strain:+.1f}%"],
             textfont=dict(color=color, size=13),
             textposition=label_position,
+            cliponaxis=False,
             hoverinfo="skip",
             showlegend=False,
         ))
@@ -619,7 +631,7 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
             ticktext=[fiber["name"] for fiber in display_fibers],
             tickangle=-90,
             tickfont=dict(size=13),
-            range=[-1.5, len(display_fibers) + 0.5],
+            range=[-2.35, len(display_fibers) + 1.35],
             showgrid=False,
             zeroline=False,
             fixedrange=True,
@@ -635,7 +647,7 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         hovermode="closest",
-        hoverdistance=30,
+        hoverdistance=40,
         uirevision="fiber-panel",
     )
     return fig
@@ -846,8 +858,8 @@ app.layout = html.Div([
                 "boxSizing": "border-box",
             }),
         ], style={
-            "flex": "0 1 calc(50% - 6px)",
-            "minWidth": "460px",
+            "flex": "0 1 calc(40% - 6px)",
+            "minWidth": "430px",
             "display": "flex",
             "gap": "6px",
             "alignItems": "stretch",
@@ -864,7 +876,7 @@ app.layout = html.Div([
                         "marginBottom": "0px",
                     },
                 ),
-            ], style={"flex": "1 1 0", "minWidth": "210px"}),
+            ], style={"flex": "1 1 0", "minWidth": "280px"}),
             html.Div([
                 dcc.Graph(
                     id="fiber-plot",
@@ -877,10 +889,10 @@ app.layout = html.Div([
                     },
                     config={"displayModeBar": False},
                 ),
-            ], style={"flex": "1 1 0", "minWidth": "210px"}),
+            ], style={"flex": "1 1 0", "minWidth": "280px"}),
         ], style={
-            "flex": "0 1 calc(50% - 6px)",
-            "minWidth": "460px",
+            "flex": "0 1 calc(60% - 6px)",
+            "minWidth": "620px",
             "display": "flex",
             "gap": "8px",
             "alignItems": "stretch",
