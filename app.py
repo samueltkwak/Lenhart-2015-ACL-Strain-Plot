@@ -475,6 +475,35 @@ def make_regression_equation_section():
     })
 
 
+def make_kinematic_readout_item(label, value, unit):
+    return html.Div([
+        html.Div(label, style={
+            "fontSize": "12px",
+            "color": "#555555",
+            "lineHeight": "1.1",
+            "whiteSpace": "nowrap",
+        }),
+        html.Div([
+            html.Span(str(value), style={
+                "fontSize": "18px",
+                "fontWeight": "650",
+                "color": "#1f1f1f",
+            }),
+            html.Span(f" {unit}", style={
+                "fontSize": "12px",
+                "color": "#555555",
+            }),
+        ], style={"lineHeight": "1.15"}),
+    ], style={
+        "minWidth": "112px",
+        "padding": "7px 10px",
+        "border": "1px solid #d6d6d6",
+        "borderRadius": "6px",
+        "background": "#ffffff",
+        "boxSizing": "border-box",
+    })
+
+
 def snap_to_values(value, values):
     return min(values, key=lambda candidate: abs(candidate - value))
 
@@ -1128,12 +1157,10 @@ app.layout = html.Div([
         "margin": "auto",
     }),
     html.Div(id="translation-readout", style={
-        "fontSize": "15px",
-        "lineHeight": "1.6",
-        "margin": "10px auto 2px",
-        "textAlign": "center",
-        "width": "50vw",
+        "margin": "10px auto 4px",
+        "width": "72vw",
         "minWidth": "360px",
+        "maxWidth": "860px",
     }),
     html.Div([
         html.Button(
@@ -1307,11 +1334,13 @@ def reset_kinematic_configuration(reset_clicks):
 @app.callback(
     Output("translation-readout", "children"),
     Output("translation-controls", "style"),
+    Input("flexion-slider", "value"),
     Input("translation-store", "data"),
     Input("proximal-slider", "value"),
     Input("surface-selection-store", "data"),
 )
-def update_translation_controls(translation, proximal_ix, surface_selection):
+def update_translation_controls(flexion_ix, translation, proximal_ix, surface_selection):
+    flexion = FLEXION_VALUES[flexion_ix]
     translation = normalized_translation(translation)
     anterior_translation = translation["anterior"]
     lateral_translation = translation["lateral"]
@@ -1331,13 +1360,29 @@ def update_translation_controls(translation, proximal_ix, surface_selection):
         "flexWrap": "wrap",
     }
 
-    readout = (
-        f"Anterior (+): {anterior_translation} mm | "
-        f"Lateral (+): {lateral_translation} mm | "
-        f"Proximal (+): {proximal_translation} mm | "
-        f"Adduction (+): {adduction} deg | "
-        f"Internal Rotation (+): {rotation} deg"
-    )
+    readout = html.Div([
+        html.Div("Current Kinematics", style={
+            "fontSize": "13px",
+            "fontWeight": "650",
+            "color": "#333333",
+            "textAlign": "center",
+            "marginBottom": "6px",
+        }),
+        html.Div([
+            make_kinematic_readout_item("Flexion", flexion, "deg"),
+            make_kinematic_readout_item("Anterior (+)", anterior_translation, "mm"),
+            make_kinematic_readout_item("Lateral (+)", lateral_translation, "mm"),
+            make_kinematic_readout_item("Proximal (+)", proximal_translation, "mm"),
+            make_kinematic_readout_item("Adduction (+)", adduction, "deg"),
+            make_kinematic_readout_item("Internal Rotation (+)", rotation, "deg"),
+        ], style={
+            "display": "flex",
+            "gap": "8px",
+            "justifyContent": "center",
+            "alignItems": "stretch",
+            "flexWrap": "wrap",
+        }),
+    ])
 
     return readout, style
 
