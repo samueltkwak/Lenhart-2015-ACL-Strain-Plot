@@ -103,6 +103,23 @@ SIXDOF_MODELS = {
     for name, equation in SIXDOF_EQUATIONS.items()
 }
 
+SIXDOF_EQUATION_DISPLAY_ORDER = [
+    "ACLam",
+    "ACLpl",
+    "ACLam1",
+    "ACLam2",
+    "ACLam3",
+    "ACLam4",
+    "ACLam5",
+    "ACLam6",
+    "ACLpl1",
+    "ACLpl2",
+    "ACLpl3",
+    "ACLpl4",
+    "ACLpl5",
+    "ACLpl6",
+]
+
 
 def threedof_variables(flexion, adduction, internal_rotation):
     return {
@@ -304,6 +321,48 @@ def make_surface_legend(z_range):
         "flexDirection": "column",
         "alignItems": "center",
         "justifyContent": "center",
+    })
+
+
+def make_regression_equation_section():
+    return html.Div([
+        html.Div("Regression Equations Used", style={
+            "fontSize": "13px",
+            "fontWeight": "600",
+            "marginBottom": "6px",
+        }),
+        html.Div(
+            "6DOF inputs: x0 = flexion (deg), x1 = adduction (deg), "
+            "x2 = internal rotation (deg), x3 = anterior translation (m), "
+            "x4 = proximal translation (m), x5 = lateral translation (m).",
+            style={
+                "fontSize": "11px",
+                "color": "#444444",
+                "marginBottom": "8px",
+            },
+        ),
+        html.Div([
+            html.Div([
+                html.Span(f"{target}: ", style={"fontWeight": "600"}),
+                html.Code(SIXDOF_EQUATIONS[target], style={
+                    "fontSize": "10px",
+                    "whiteSpace": "nowrap",
+                }),
+            ], style={
+                "padding": "4px 0",
+                "borderTop": "1px solid #eeeeee",
+                "overflowX": "auto",
+            })
+            for target in SIXDOF_EQUATION_DISPLAY_ORDER
+        ]),
+    ], style={
+        "fontSize": "11px",
+        "lineHeight": "1.35",
+        "maxWidth": "1180px",
+        "margin": "18px auto 8px",
+        "padding": "8px 12px",
+        "color": "#222222",
+        "boxSizing": "border-box",
     })
 
 
@@ -1012,6 +1071,7 @@ app.layout = html.Div([
         "margin": "auto",
         "flexWrap": "wrap",
     }),
+    make_regression_equation_section(),
 ])
 
 
