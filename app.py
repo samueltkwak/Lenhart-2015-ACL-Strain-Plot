@@ -791,7 +791,6 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         max_display_length = max(max_display_length, max(mean_display_length, 1.0))
         x_start = min(bundle_indices) - 0.38
         x_end = max(bundle_indices) + 0.38
-        group_label = bundle_name.replace("ACL", "").upper()
         color = acl_fiber_color(bundle_name)
         label_x = (x_start + x_end) / 2
         mean_annotations.append(dict(
@@ -799,7 +798,7 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
             y=0.97,
             xref="x",
             yref="paper",
-            text=f"{group_label} mean {mean_strain:+.1f}%",
+            text=f"{bundle_name} {mean_strain:+.1f}%",
             showarrow=False,
             font=dict(color=color, size=16),
             xanchor="center",
