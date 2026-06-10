@@ -41,6 +41,8 @@ x_axis_label = "Adduction"
 y_axis_label = "Internal Rotation"
 translation_pad_x_label = "M/L Translation (mm): + Lateral"
 translation_pad_y_label = "A/P Translation (mm): + Anterior"
+rotation_pad_x_label = "Adduction (deg): + Adduction"
+rotation_pad_y_label = "Internal Rotation (deg): + Internal"
 proximal_slider_label = "Proximal Translation (mm)"
 
 
@@ -879,6 +881,7 @@ app.layout = html.Div([
         "lateral": 0,
     }),
     dcc.Input(id="translation-input", value="0,0", type="hidden"),
+    dcc.Input(id="rotation-input", value="0,0", type="hidden"),
     html.Div([
         dcc.Loading(
             id="model-loading",
@@ -1025,9 +1028,17 @@ app.layout = html.Div([
                     html.Div("-10", className="pad-label x-label-bottom x-label-left"),
                     html.Div("0", className="pad-label x-label-bottom x-label-center"),
                     html.Div("10", className="pad-label x-label-bottom x-label-right"),
-                    html.Div(id="translation-dot", className="translation-dot"),
+                    html.Div(id="translation-dot", className="translation-dot pad-dot"),
                 ],
+                className="kinematic-pad-control",
                 **{
+                    "data-pad-kind": "translation",
+                    "data-input-id": "translation-input",
+                    "data-store-id": "translation-store",
+                    "data-dot-id": "translation-dot",
+                    "data-x-key": "lateral",
+                    "data-y-key": "anterior",
+                    "data-input-order": "y,x",
                     "data-x-min": min(LATERAL_TRANSLATION_VALUES),
                     "data-x-max": max(LATERAL_TRANSLATION_VALUES),
                     "data-x-step": LATERAL_TRANSLATION_VALUES[1] - LATERAL_TRANSLATION_VALUES[0],
@@ -1038,6 +1049,38 @@ app.layout = html.Div([
             ),
             html.Div(translation_pad_x_label, className="pad-axis-label pad-axis-label-x"),
         ], className="translation-pad-wrap", style={"flex": "0 0 320px"}),
+        html.Div([
+            html.Div(rotation_pad_y_label, className="pad-axis-label pad-axis-label-y"),
+            html.Div(
+                id="rotation-pad-control",
+                children=[
+                    html.Div("-20", className="pad-label pad-label-left y-label-bottom"),
+                    html.Div("0", className="pad-label pad-label-left y-label-middle"),
+                    html.Div("20", className="pad-label pad-label-left y-label-top"),
+                    html.Div("-20", className="pad-label x-label-bottom x-label-left"),
+                    html.Div("0", className="pad-label x-label-bottom x-label-center"),
+                    html.Div("20", className="pad-label x-label-bottom x-label-right"),
+                    html.Div(id="rotation-dot", className="translation-dot pad-dot rotation-dot"),
+                ],
+                className="kinematic-pad-control",
+                **{
+                    "data-pad-kind": "rotation",
+                    "data-input-id": "rotation-input",
+                    "data-store-id": "surface-selection-store",
+                    "data-dot-id": "rotation-dot",
+                    "data-x-key": "adduction",
+                    "data-y-key": "rotation",
+                    "data-input-order": "x,y",
+                    "data-x-min": min(ADDUCTION_VALUES),
+                    "data-x-max": max(ADDUCTION_VALUES),
+                    "data-x-step": ADDUCTION_VALUES[1] - ADDUCTION_VALUES[0],
+                    "data-y-min": min(INTERNAL_ROTATION_VALUES),
+                    "data-y-max": max(INTERNAL_ROTATION_VALUES),
+                    "data-y-step": INTERNAL_ROTATION_VALUES[1] - INTERNAL_ROTATION_VALUES[0],
+                },
+            ),
+            html.Div(rotation_pad_x_label, className="pad-axis-label pad-axis-label-x"),
+        ], className="translation-pad-wrap rotation-pad-wrap", style={"flex": "0 0 320px"}),
         html.Div([
             html.Label(proximal_slider_label, style={"fontSize": "16px"}),
             html.Div("Proximal (+)", style={"fontSize": "13px", "color": "#4f4f4f"}),
@@ -1110,6 +1153,7 @@ def update_translation_store(translation_value, reset_clicks, current_translatio
     Output("flexion-slider", "value"),
     Output("proximal-slider", "value"),
     Output("translation-input", "value"),
+    Output("rotation-input", "value"),
     Input("reset-kinematics", "n_clicks"),
     prevent_initial_call=True,
 )
@@ -1117,6 +1161,7 @@ def reset_kinematic_configuration(reset_clicks):
     return (
         FLEXION_VALUES.index(0),
         PROXIMAL_TRANSLATION_VALUES.index(0),
+        "0,0",
         "0,0",
     )
 
@@ -1126,12 +1171,16 @@ def reset_kinematic_configuration(reset_clicks):
     Output("translation-controls", "style"),
     Input("translation-store", "data"),
     Input("proximal-slider", "value"),
+    Input("surface-selection-store", "data"),
 )
-def update_translation_controls(translation, proximal_ix):
+def update_translation_controls(translation, proximal_ix, surface_selection):
     translation = normalized_translation(translation)
     anterior_translation = translation["anterior"]
     lateral_translation = translation["lateral"]
     proximal_translation = PROXIMAL_TRANSLATION_VALUES[proximal_ix]
+    surface_selection = surface_selection or SURFACE_SELECTION_DEFAULT
+    adduction = surface_selection["adduction"]
+    rotation = surface_selection["rotation"]
 
     style = {
         "display": "flex",
@@ -1147,7 +1196,9 @@ def update_translation_controls(translation, proximal_ix):
     readout = (
         f"Anterior (+): {anterior_translation} mm | "
         f"Lateral (+): {lateral_translation} mm | "
-        f"Proximal (+): {proximal_translation} mm"
+        f"Proximal (+): {proximal_translation} mm | "
+        f"Adduction (+): {adduction} deg | "
+        f"Internal Rotation (+): {rotation} deg"
     )
 
     return readout, style
@@ -1155,24 +1206,29 @@ def update_translation_controls(translation, proximal_ix):
 
 @app.callback(
     Output("surface-selection-store", "data"),
-    Input("surface-plot-pl", "clickData"),
-    Input("surface-plot-am", "clickData"),
+    Input("rotation-input", "value"),
     Input("reset-kinematics", "n_clicks"),
     State("surface-selection-store", "data"),
 )
-def update_surface_selection(pl_click_data, am_click_data, reset_clicks, current_selection):
+def update_surface_selection(rotation_value, reset_clicks, current_selection):
     trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
     if trigger == "reset-kinematics":
         return SURFACE_SELECTION_DEFAULT
 
-    click_data = am_click_data if trigger == "surface-plot-am" else pl_click_data
-    if not click_data:
+    if not rotation_value:
         return current_selection or SURFACE_SELECTION_DEFAULT
 
-    point = click_data["points"][0]
+    try:
+        adduction_value, rotation_value = [
+            float(value)
+            for value in rotation_value.split(",", maxsplit=1)
+        ]
+    except ValueError:
+        return current_selection or SURFACE_SELECTION_DEFAULT
+
     return {
-        "adduction": snap_to_values(point.get("x", 0), ADDUCTION_VALUES),
-        "rotation": snap_to_values(point.get("y", 0), INTERNAL_ROTATION_VALUES),
+        "adduction": snap_to_values(adduction_value, ADDUCTION_VALUES),
+        "rotation": snap_to_values(rotation_value, INTERNAL_ROTATION_VALUES),
     }
 
 
