@@ -389,7 +389,7 @@ def format_percent_tick(value):
 def make_surface_legend(z_range):
     z_min, z_max = z_range
     return html.Div([
-        html.Div("Strain (%)", style={
+        html.Div("Strain (%)", className="surface-legend-title", style={
             "fontSize": "13px",
             "fontWeight": "600",
             "textAlign": "center",
@@ -397,7 +397,7 @@ def make_surface_legend(z_range):
             "whiteSpace": "nowrap",
         }),
         html.Div([
-            html.Div(style={
+            html.Div(className="surface-legend-bar", style={
                 "width": "18px",
                 "height": "100%",
                 "background": "linear-gradient(to bottom, #7b1b22 0%, #f7f7f7 50%, #1f5f9f 100%)",
@@ -408,7 +408,7 @@ def make_surface_legend(z_range):
                 html.Div(format_percent_tick(z_max)),
                 html.Div(format_percent_tick(0)),
                 html.Div(format_percent_tick(z_min)),
-            ], style={
+            ], className="surface-legend-ticks", style={
                 "height": "100%",
                 "display": "flex",
                 "flexDirection": "column",
@@ -417,14 +417,14 @@ def make_surface_legend(z_range):
                 "lineHeight": "1",
                 "color": "#222222",
             }),
-        ], style={
+        ], className="surface-legend-body", style={
             "height": "calc(100% - 25px)",
             "display": "flex",
             "gap": "6px",
             "alignItems": "stretch",
             "justifyContent": "center",
         }),
-    ], style={
+    ], className="surface-legend", style={
         "height": "100%",
         "display": "flex",
         "flexDirection": "column",
@@ -494,7 +494,7 @@ def make_kinematic_readout_item(label, value, unit):
                 "color": "#555555",
             }),
         ], style={"lineHeight": "1.15"}),
-    ], style={
+    ], className="kinematic-readout-item", style={
         "minWidth": "112px",
         "padding": "7px 10px",
         "border": "1px solid #d6d6d6",
@@ -1048,7 +1048,7 @@ app.layout = html.Div([
                 style={"fontSize": "13px"},
             ),
         ], style={"width": "220px"}),
-    ], style={
+    ], className="surface-axis-controls", style={
         "display": "flex",
         "gap": "12px",
         "justifyContent": "center",
@@ -1079,14 +1079,14 @@ app.layout = html.Div([
                         "marginBottom": "0px",
                     },
                 ),
-            ], style={"flex": "1 1 auto", "minWidth": "0"}),
+            ], className="surface-plots", style={"flex": "1 1 auto", "minWidth": "0"}),
             html.Div(id="surface-strain-legend", style={
                 "flex": "0 0 58px",
                 "height": "60vh",
                 "padding": "4px 0",
                 "boxSizing": "border-box",
             }),
-        ], style={
+        ], className="surface-panel", style={
             "flex": "0 1 calc(40% - 6px)",
             "minWidth": "430px",
             "display": "flex",
@@ -1105,7 +1105,7 @@ app.layout = html.Div([
                         "marginBottom": "0px",
                     },
                 ),
-            ], style={"flex": "1 1 0", "minWidth": "280px"}),
+            ], className="anatomy-panel", style={"flex": "1 1 0", "minWidth": "280px"}),
             html.Div([
                 dcc.Graph(
                     id="fiber-plot",
@@ -1118,15 +1118,15 @@ app.layout = html.Div([
                     },
                     config={"displayModeBar": False},
                 ),
-            ], style={"flex": "1 1 0", "minWidth": "280px"}),
-        ], style={
+            ], className="fiber-panel", style={"flex": "1 1 0", "minWidth": "280px"}),
+        ], className="model-fiber-panel", style={
             "flex": "0 1 calc(60% - 6px)",
             "minWidth": "620px",
             "display": "flex",
             "gap": "8px",
             "alignItems": "stretch",
         }),
-    ], style={
+    ], className="visual-dashboard", style={
         "display": "flex",
         "gap": "12px",
         "alignItems": "stretch",
@@ -1148,14 +1148,14 @@ app.layout = html.Div([
             marks={i: str(val) for i, val in enumerate(FLEXION_VALUES) if val % 10 == 0},
             included=False,
         ),
-    ], style={
+    ], className="flexion-control", style={
         "padding": "0px",
         "marginTop": "0px",
         "width": "50vw",
         "minWidth": "360px",
         "margin": "auto",
     }),
-    html.Div(id="translation-readout", style={
+    html.Div(id="translation-readout", className="kinematic-readout", style={
         "margin": "10px auto 4px",
         "width": "72vw",
         "minWidth": "360px",
@@ -1175,7 +1175,7 @@ app.layout = html.Div([
                 "cursor": "pointer",
             },
         ),
-    ], style={
+    ], className="reset-row", style={
         "display": "flex",
         "justifyContent": "center",
         "margin": "4px auto 0",
@@ -1279,7 +1279,7 @@ app.layout = html.Div([
         "flexWrap": "wrap",
     }),
     make_regression_equation_section(),
-])
+], className="app-root")
 
 
 @app.callback(

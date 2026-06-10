@@ -220,3 +220,205 @@
         transform: scale(1.18);
     }
 }
+
+@media (max-width: 1100px) {
+    .visual-dashboard {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .surface-panel,
+    .model-fiber-panel {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .model-fiber-panel {
+        gap: 10px !important;
+    }
+
+    .anatomy-panel,
+    .fiber-panel {
+        min-width: 0 !important;
+    }
+
+    #surface-plot-pl,
+    #surface-plot-am {
+        height: 34vh !important;
+        min-height: 280px;
+    }
+
+    #surface-strain-legend {
+        height: calc(68vh + 4px) !important;
+        min-height: 564px;
+    }
+
+    #anatomy-plot,
+    #fiber-plot {
+        height: 44vh !important;
+        min-height: 320px;
+    }
+
+    .flexion-control,
+    .kinematic-readout {
+        width: min(92vw, 860px) !important;
+        min-width: 0 !important;
+    }
+
+    #translation-controls {
+        gap: 18px !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .app-root {
+        padding: 0 8px;
+        box-sizing: border-box;
+    }
+
+    .surface-axis-controls {
+        gap: 8px !important;
+    }
+
+    .surface-axis-controls > div {
+        width: calc(50% - 4px) !important;
+        min-width: 150px;
+    }
+
+    .surface-panel {
+        gap: 4px !important;
+    }
+
+    #surface-plot-pl,
+    #surface-plot-am {
+        height: 36vh !important;
+        min-height: 300px;
+    }
+
+    #surface-strain-legend {
+        flex: 0 0 48px !important;
+        height: calc(72vh + 4px) !important;
+        min-height: 604px;
+    }
+
+    .model-fiber-panel {
+        flex-direction: column !important;
+    }
+
+    #anatomy-plot,
+    #fiber-plot {
+        height: 52vh !important;
+        min-height: 360px;
+    }
+
+    .kinematic-readout {
+        width: 100% !important;
+    }
+
+    .kinematic-readout-item {
+        flex: 1 1 30% !important;
+        min-width: 104px !important;
+        padding: 7px 8px !important;
+    }
+
+    #translation-controls {
+        gap: 12px !important;
+        padding-top: 6px !important;
+    }
+
+    .translation-pad-wrap {
+        flex: 0 1 300px !important;
+        width: 300px !important;
+        padding-left: 60px;
+    }
+
+    .kinematic-pad-control {
+        width: 220px !important;
+        height: 220px !important;
+        background-size: 22px 22px;
+    }
+
+    .pad-axis-label-x {
+        width: 220px;
+    }
+
+    .pad-axis-label-y {
+        left: -106px;
+        top: 120px;
+        width: 220px;
+    }
+}
+
+@media (max-width: 480px) {
+    .surface-axis-controls > div {
+        width: 100% !important;
+    }
+
+    .surface-panel {
+        flex-direction: column !important;
+    }
+
+    #surface-strain-legend {
+        width: 100% !important;
+        height: 58px !important;
+        min-height: 0 !important;
+        flex: 0 0 auto !important;
+        padding: 0 !important;
+    }
+
+    .surface-legend {
+        align-items: stretch !important;
+        justify-content: center !important;
+    }
+
+    .surface-legend-title {
+        margin-bottom: 4px !important;
+    }
+
+    .surface-legend-body {
+        height: 28px !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+    }
+
+    .surface-legend-bar {
+        width: 100% !important;
+        height: 12px !important;
+        background: linear-gradient(to right, #1f5f9f 0%, #f7f7f7 50%, #7b1b22 100%) !important;
+    }
+
+    .surface-legend-ticks {
+        height: auto !important;
+        flex-direction: row-reverse !important;
+        justify-content: space-between !important;
+        text-align: center !important;
+    }
+
+    .kinematic-readout-item {
+        flex-basis: calc(50% - 8px) !important;
+        min-width: 0 !important;
+    }
+
+    .translation-pad-wrap {
+        flex-basis: 286px !important;
+        width: 286px !important;
+        padding-left: 56px;
+    }
+
+    .kinematic-pad-control {
+        width: 210px !important;
+        height: 210px !important;
+        background-size: 21px 21px;
+    }
+
+    .pad-axis-label-x {
+        width: 210px;
+    }
+
+    .pad-axis-label-y {
+        left: -102px;
+        top: 115px;
+        width: 210px;
+    }
+}
