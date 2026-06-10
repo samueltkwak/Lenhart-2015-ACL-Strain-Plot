@@ -590,13 +590,13 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         bundle_strains = [display_fibers[index]["strain"] for index in bundle_indices]
         mean_strain = float(bundle_mean_strains.get(bundle_name, np.mean(bundle_strains)))
         mean_display_length = 1 + (mean_strain / 100)
-        max_display_length = max(max_display_length, max(mean_display_length, 1) + 0.12)
+        max_display_length = max(max_display_length, max(mean_display_length, 1) + 0.18)
         x_start = min(bundle_indices) - 0.38
         x_end = max(bundle_indices) + 0.38
         group_label = bundle_name.replace("ACL", "").upper()
         color = acl_fiber_color(bundle_name)
-        label_x = x_start - 0.18 if bundle_name == "ACLam" else x_end + 0.18
-        label_position = "middle left" if bundle_name == "ACLam" else "middle right"
+        label_x = (x_start + x_end) / 2
+        label_y = mean_display_length + 0.04
 
         fig.add_trace(go.Scatter(
             x=[x_start, x_end],
@@ -613,11 +613,11 @@ def make_fiber_figure(fibers, bundle_mean_strains=None):
         ))
         fig.add_trace(go.Scatter(
             x=[label_x],
-            y=[mean_display_length],
+            y=[label_y],
             mode="text",
             text=[f"{group_label} mean {mean_strain:+.1f}%"],
             textfont=dict(color=color, size=13),
-            textposition=label_position,
+            textposition="bottom center",
             cliponaxis=False,
             hoverinfo="skip",
             showlegend=False,
