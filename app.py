@@ -822,10 +822,10 @@ app.layout = html.Div([
     dcc.Input(id="translation-input", value="0,0", type="hidden"),
     html.Div([
         dcc.Loading(
-            id="custom-loading",
-            type="cube",
-            color="#1f77b4",
-            children=[html.Div(id="loading-message", className="visual-loading-target")],
+            id="model-loading",
+            type="default",
+            color="rgba(0, 0, 0, 0)",
+            children=[html.Div(id="model-loading-message", className="visual-loading-target")],
         ),
     ], className="visual-loading-overlay"),
     html.Div([
@@ -1205,9 +1205,6 @@ def store_surface_camera(pl_relayout_data, am_relayout_data, stored_camera):
     Output("surface-plot-pl", "figure"),
     Output("surface-plot-am", "figure"),
     Output("surface-strain-legend", "children"),
-    Output("anatomy-plot", "figure"),
-    Output("fiber-plot", "figure"),
-    Output("loading-message", "children"),
     [
         Input("flexion-slider", "value"),
         Input("translation-store", "data"),
@@ -1215,15 +1212,13 @@ def store_surface_camera(pl_relayout_data, am_relayout_data, stored_camera):
         Input("surface-selection-store", "data"),
     ],
     State("camera-store", "data"),
-    State("anatomy-camera-store", "data"),
 )
-def update_surface(
+def update_surface_plots(
     flexion_ix,
     translation,
     proximal_ix,
     surface_selection,
     stored_camera,
-    stored_anatomy_camera,
 ):
     flexion = FLEXION_VALUES[flexion_ix]
     translation = normalized_translation(translation)
@@ -1236,7 +1231,6 @@ def update_surface(
     selected_rotation = surface_selection["rotation"]
 
     camera = stored_camera if stored_camera else SURFACE_CAMERA
-    anatomy_camera = stored_anatomy_camera if stored_anatomy_camera else ANTERIOR_ANATOMY_CAMERA
 
     surface_pl_z = get_z_matrix(
         model_mode=model_mode,
@@ -1286,6 +1280,39 @@ def update_surface(
     )
     surface_legend = make_surface_legend(shared_z_range)
 
+    return surface_pl_fig, surface_am_fig, surface_legend
+
+
+@app.callback(
+    Output("anatomy-plot", "figure"),
+    Output("fiber-plot", "figure"),
+    Output("model-loading-message", "children"),
+    [
+        Input("flexion-slider", "value"),
+        Input("translation-store", "data"),
+        Input("proximal-slider", "value"),
+        Input("surface-selection-store", "data"),
+    ],
+    State("anatomy-camera-store", "data"),
+)
+def update_anatomy_and_fibers(
+    flexion_ix,
+    translation,
+    proximal_ix,
+    surface_selection,
+    stored_anatomy_camera,
+):
+    flexion = FLEXION_VALUES[flexion_ix]
+    translation = normalized_translation(translation)
+    anterior_translation = translation["anterior"]
+    lateral_translation = translation["lateral"]
+    proximal_translation = PROXIMAL_TRANSLATION_VALUES[proximal_ix]
+    model_mode = "6DOF"
+    surface_selection = surface_selection or SURFACE_SELECTION_DEFAULT
+    selected_adduction = surface_selection["adduction"]
+    selected_rotation = surface_selection["rotation"]
+    anatomy_camera = stored_anatomy_camera if stored_anatomy_camera else ANTERIOR_ANATOMY_CAMERA
+
     anatomy_fig = make_anatomy_figure(
         flexion=flexion,
         adduction=selected_adduction,
@@ -1305,7 +1332,7 @@ def update_surface(
         proximal_translation=proximal_translation,
     )
 
-    return surface_pl_fig, surface_am_fig, surface_legend, anatomy_fig, fiber_fig, ""
+    return anatomy_fig, fiber_fig, ""
 
 
 @app.callback(
