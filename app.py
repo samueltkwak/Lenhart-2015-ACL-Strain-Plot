@@ -32,7 +32,11 @@ BONE_LIGHTING = dict(
 BONE_LIGHTPOSITION = dict(x=-0.4, y=-1.2, z=1.8)
 KNEE_JOINT_CENTER = np.array([0.0, 0.0, 0.0])
 ANTERIOR_ANATOMY_CAMERA = dict(eye=dict(x=2.35, y=0.0, z=0.15))
-SURFACE_CAMERA = dict(eye=dict(x=-1.85, y=-1.85, z=0.75), center=dict(x=-0.06, y=-0.04, z=-0.08))
+SURFACE_CAMERA = dict(
+    eye=dict(x=1.85, y=1.85, z=0.82),
+    center=dict(x=0.0, y=0.0, z=-0.06),
+    up=dict(x=0.0, y=0.0, z=1.0),
+)
 
 scroll_bar1_label = "Knee Flexion (deg)"
 translation_pad_x_label = "M/L Translation (mm): + Lateral"
