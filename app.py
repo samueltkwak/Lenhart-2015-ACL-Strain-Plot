@@ -1449,6 +1449,8 @@ def make_surface_figure(
                 show=True,
                 usecolormap=True,
                 highlightcolor="#ffffff",
+                highlightwidth=4,
+                width=3,
                 project=dict(z=True),
             ),
         ),
