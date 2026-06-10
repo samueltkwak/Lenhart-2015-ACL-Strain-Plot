@@ -1,7 +1,4 @@
-dash
-dash-daq
-pandas
+dash<4
 numpy
 plotly
 gunicorn
-pyarrow

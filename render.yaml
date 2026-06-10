@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: lenhart-2015-acl-strain-plot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server

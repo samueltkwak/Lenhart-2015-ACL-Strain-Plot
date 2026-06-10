@@ -1,0 +1,147 @@
+.translation-pad-wrap {
+    position: relative;
+    width: 348px;
+    padding: 10px 0 28px 72px;
+    box-sizing: border-box;
+}
+
+#translation-pad-control {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    margin: 0;
+    border: 1px solid #8f8f8f;
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(to right, #e5e5e5 1px, transparent 1px),
+        linear-gradient(to bottom, #e5e5e5 1px, transparent 1px);
+    background-size: 24px 24px;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+}
+
+.pad-axis-label {
+    color: #2f2f2f;
+    font-size: 13px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.pad-axis-label-x {
+    width: 240px;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.pad-axis-label-y {
+    position: absolute;
+    left: -116px;
+    top: 130px;
+    width: 240px;
+    text-align: center;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+#translation-pad-control::before,
+#translation-pad-control::after {
+    content: "";
+    position: absolute;
+    background: #9b9b9b;
+    pointer-events: none;
+}
+
+#translation-pad-control::before {
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+}
+
+#translation-pad-control::after {
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+}
+
+.translation-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #111111;
+    border-radius: 50%;
+    background: #1f77b4;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 2;
+}
+
+.translation-dot.dragging {
+    cursor: grabbing;
+}
+
+.pad-label {
+    position: absolute;
+    color: #4f4f4f;
+    font-size: 12px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.pad-label-left {
+    left: -26px;
+}
+
+.y-label-top {
+    top: -6px;
+}
+
+.y-label-middle {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.y-label-bottom {
+    bottom: -6px;
+}
+
+.x-label-bottom {
+    bottom: -20px;
+}
+
+.x-label-left {
+    left: -8px;
+}
+
+.x-label-center {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.x-label-right {
+    right: -8px;
+}
+
+.visual-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.visual-loading-target {
+    width: 64px;
+    height: 64px;
+}
+
+.visual-loading-overlay .dash-spinner {
+    transform: scale(1.7);
+}

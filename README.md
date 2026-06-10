@@ -1,41 +1,42 @@
 # ACL Model Visualization
 
-Interactive 3D visualization of ACL strain based on the Lenhart (2015) model.
+Interactive Dash visualization of ACL strain for the Lenhart 2015 model workflow.
 
-## Files to upload to GitHub:
+## Current Model Status
 
-1. `app.py` - Main Dash application
-2. `requirements.txt` - Python dependencies  
-3. `Procfile` - For deployment
-4. `runtime.txt` - Python version
-5. `data.txt` - Your ACL data file (tab-separated)
-6. `README.md` - This file
+The app does not load strain data from a repository, database, or external service. `app.py` evaluates the embedded 6DOF equations for the ACLam and ACLpl bundles and individual fibers.
 
-## Setup Instructions:
+The 3DOF equation functions are still present in the source for later development, but the current deployed UI is 6DOF-only.
 
-### Step 1: Upload to GitHub
-1. Go to github.com and sign in
-2. Click "New repository" 
-3. Name it something like "acl-model-app"
-4. Make it Public
-5. Upload all files listed above
+## Usage
 
-### Step 2: Update Data URL
-1. After uploading, edit `app.py`
-2. Find the line: `DATA_URL = "https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO-NAME/main/data.txt"`
-3. Replace YOUR-USERNAME with your GitHub username
-4. Replace YOUR-REPO-NAME with your repository name
-5. Save the changes
+- Use the flexion slider to control knee flexion in 1 degree increments.
+- Click either strain surface to select adduction and internal rotation in 1 degree increments.
+- Drag the translation pad dot to set anterior/posterior and medial/lateral tibial translation.
+- Use the vertical slider to set proximal/distal translation.
+- Inspect the anatomy panel to see the right femur, tibia, fibula, and ACL fibers respond to the selected kinematics.
+- Hover over the fiber strain panel to read individual fiber strain, reference length, and current length.
+- Rotate and zoom the strain surfaces and anatomy model directly in their plots.
 
-### Step 3: Deploy on Render
-1. Go to render.com and sign up
-2. Click "New +" → "Web Service"
-3. Connect your GitHub repository
-4. Click "Deploy"
-5. Wait 2-3 minutes
-6. Get your public URL!
+## Local Setup
 
-## Usage:
-- Use the three sliders to control knee kinematics
-- View real-time ACL strain changes in 3D
-- Share the public URL with anyone!
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+## Render Deployment
+
+This repository includes both a `Procfile` and `render.yaml`.
+
+Render can start the Dash app with:
+
+```bash
+gunicorn app:server
+```
+
+For a manual Render web service setup:
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `gunicorn app:server`
+- Runtime: Python
