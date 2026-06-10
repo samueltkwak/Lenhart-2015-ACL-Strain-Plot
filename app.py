@@ -386,8 +386,28 @@ def format_percent_tick(value):
     return f"{value:.1f}"
 
 
+def surface_contour_values(z_range):
+    z_min, z_max = z_range
+    return [float(value) for value in np.linspace(z_min, z_max, 5)]
+
+
+def legend_position_percent(value, z_range):
+    z_min, z_max = z_range
+    if z_max == z_min:
+        return 50.0
+    return ((z_max - value) / (z_max - z_min)) * 100
+
+
+def legend_horizontal_position_percent(value, z_range):
+    z_min, z_max = z_range
+    if z_max == z_min:
+        return 50.0
+    return ((value - z_min) / (z_max - z_min)) * 100
+
+
 def make_surface_legend(z_range):
     z_min, z_max = z_range
+    contour_values = surface_contour_values(z_range)
     return html.Div([
         html.Div("Strain (%)", className="surface-legend-title", style={
             "fontSize": "13px",
@@ -397,7 +417,16 @@ def make_surface_legend(z_range):
             "whiteSpace": "nowrap",
         }),
         html.Div([
-            html.Div(className="surface-legend-bar", style={
+            html.Div([
+                html.Div(
+                    className="surface-legend-contour-line",
+                    style={
+                        "--legend-position": f"{legend_position_percent(value, z_range):.2f}%",
+                        "--legend-x-position": f"{legend_horizontal_position_percent(value, z_range):.2f}%",
+                    },
+                )
+                for value in contour_values
+            ], className="surface-legend-bar", style={
                 "width": "18px",
                 "height": "100%",
                 "background": "linear-gradient(to bottom, #7b1b22 0%, #f7f7f7 50%, #1f5f9f 100%)",
@@ -405,14 +434,17 @@ def make_surface_legend(z_range):
                 "boxSizing": "border-box",
             }),
             html.Div([
-                html.Div(format_percent_tick(z_max)),
-                html.Div(format_percent_tick(0)),
-                html.Div(format_percent_tick(z_min)),
+                html.Div(
+                    format_percent_tick(value),
+                    className="surface-legend-contour-label",
+                    style={
+                        "--legend-position": f"{legend_position_percent(value, z_range):.2f}%",
+                        "--legend-x-position": f"{legend_horizontal_position_percent(value, z_range):.2f}%",
+                    },
+                )
+                for value in contour_values
             ], className="surface-legend-ticks", style={
                 "height": "100%",
-                "display": "flex",
-                "flexDirection": "column",
-                "justifyContent": "space-between",
                 "fontSize": "13px",
                 "lineHeight": "1",
                 "color": "#222222",
@@ -1433,6 +1465,8 @@ def make_surface_figure(
     y_values = y_definition["values"]
     selected_x = current_values[x_axis]
     selected_y = current_values[y_axis]
+    contour_values = surface_contour_values(z_range)
+    contour_size = contour_values[1] - contour_values[0]
     fig = go.Figure()
     fig.add_trace(go.Surface(
         x=x_values,
@@ -1450,6 +1484,9 @@ def make_surface_figure(
                 usecolormap=True,
                 highlightcolor="#ffffff",
                 highlightwidth=4,
+                start=contour_values[0],
+                end=contour_values[-1],
+                size=contour_size,
                 width=3,
                 project=dict(z=True),
             ),
