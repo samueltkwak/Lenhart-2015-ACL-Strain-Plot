@@ -169,14 +169,19 @@
     }
 
     function cameraFromGraph(graph) {
+        var scene = graph && graph._fullLayout && graph._fullLayout.scene;
+
+        if (scene && scene._scene && typeof scene._scene.getCamera === "function") {
+            return cloneCamera(scene._scene.getCamera());
+        }
         if (graph && graph._lastCamera) {
             return cloneCamera(graph._lastCamera);
         }
+        if (scene && scene.camera) {
+            return cloneCamera(scene.camera);
+        }
         if (graph && graph.layout && graph.layout.scene && graph.layout.scene.camera) {
             return cloneCamera(graph.layout.scene.camera);
-        }
-        if (graph && graph._fullLayout && graph._fullLayout.scene && graph._fullLayout.scene.camera) {
-            return cloneCamera(graph._fullLayout.scene.camera);
         }
         return {};
     }
@@ -227,7 +232,7 @@
     }
 
     function setupPlotPinchZoom(container) {
-        if (!container || container.dataset.pinchZoomInitialized === "true") {
+        if (!container) {
             return;
         }
 
@@ -235,11 +240,15 @@
             return;
         }
 
-        var activePointers = {};
-        var startDistance = null;
-        var startCamera = null;
+        function activePointerList() {
+            return Object.keys(container._pinchZoomPointers || {}).map(function (pointerId) {
+                return container._pinchZoomPointers[pointerId];
+            });
+        }
 
-        container.dataset.pinchZoomInitialized = "true";
+        function graphDiv() {
+            return container.querySelector(".js-plotly-plot");
+        }
 
         function storeCamera(camera) {
             var graph = graphDiv();
@@ -248,15 +257,31 @@
             }
         }
 
-        function activePointerList() {
-            return Object.keys(activePointers).map(function (pointerId) {
-                return activePointers[pointerId];
+        function bindCameraListener() {
+            var graph = graphDiv();
+            if (!graph || typeof graph.on !== "function" || graph._pinchZoomRelayoutBound) {
+                return;
+            }
+
+            graph._pinchZoomRelayoutBound = true;
+            graph.on("plotly_relayout", function (eventData) {
+                var camera = cameraFromRelayout(eventData, graphDiv());
+                if (camera) {
+                    storeCamera(camera);
+                }
             });
         }
 
-        function graphDiv() {
-            return container.querySelector(".js-plotly-plot");
+        bindCameraListener();
+
+        if (container.dataset.pinchZoomInitialized === "true") {
+            return;
         }
+
+        container._pinchZoomPointers = {};
+        container._pinchZoomStartDistance = null;
+        container._pinchZoomStartCamera = null;
+        container.dataset.pinchZoomInitialized = "true";
 
         function beginPinchIfReady(event) {
             var graph = graphDiv();
@@ -273,12 +298,13 @@
                 }
             }
 
-            startDistance = pointerDistance(pointers[0], pointers[1]);
-            startCamera = cameraFromGraph(graph);
+            container._pinchZoomStartDistance = pointerDistance(pointers[0], pointers[1]);
+            container._pinchZoomStartCamera = cameraFromGraph(graph);
+            storeCamera(container._pinchZoomStartCamera);
         }
 
         function updatePinch(event) {
-            if (!startDistance || !startCamera) {
+            if (!container._pinchZoomStartDistance || !container._pinchZoomStartCamera) {
                 return;
             }
 
@@ -294,8 +320,8 @@
             }
 
             event.preventDefault();
-            var scale = clampScale(startDistance / currentDistance);
-            var nextCamera = scaledCamera(startCamera, scale);
+            var scale = clampScale(container._pinchZoomStartDistance / currentDistance);
+            var nextCamera = scaledCamera(container._pinchZoomStartCamera, scale);
             storeCamera(nextCamera);
             window.Plotly.relayout(graph, {
                 "scene.camera": nextCamera,
@@ -303,10 +329,10 @@
         }
 
         function clearPointer(pointerId) {
-            delete activePointers[pointerId];
+            delete container._pinchZoomPointers[pointerId];
             if (activePointerList().length < 2) {
-                startDistance = null;
-                startCamera = null;
+                container._pinchZoomStartDistance = null;
+                container._pinchZoomStartCamera = null;
             }
         }
 
@@ -315,7 +341,7 @@
                 return;
             }
 
-            activePointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+            container._pinchZoomPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
             if (activePointerList().length >= 2) {
                 event.preventDefault();
                 beginPinchIfReady(event);
@@ -323,11 +349,11 @@
         });
 
         container.addEventListener("pointermove", function (event) {
-            if (event.pointerType !== "touch" || !activePointers[event.pointerId]) {
+            if (event.pointerType !== "touch" || !container._pinchZoomPointers[event.pointerId]) {
                 return;
             }
 
-            activePointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+            container._pinchZoomPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
             updatePinch(event);
         });
 
@@ -339,18 +365,6 @@
         });
         container.addEventListener("pointerleave", function (event) {
             clearPointer(event.pointerId);
-        });
-
-        var graph = graphDiv();
-        if (!graph || typeof graph.on !== "function") {
-            return;
-        }
-
-        graph.on("plotly_relayout", function (eventData) {
-            var camera = cameraFromRelayout(eventData, graphDiv());
-            if (camera) {
-                storeCamera(camera);
-            }
         });
     }
 
