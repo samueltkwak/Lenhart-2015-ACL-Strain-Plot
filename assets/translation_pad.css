@@ -304,8 +304,16 @@
 
 @media (max-width: 760px) {
     .app-root {
-        padding: 0 8px;
+        padding: 0 18px;
         box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    .visual-dashboard {
+        width: 100% !important;
+        max-width: calc(100vw - 36px) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     .surface-axis-controls {

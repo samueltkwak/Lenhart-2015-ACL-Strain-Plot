@@ -11,7 +11,7 @@ The 3DOF equation functions are still present in the source for later developmen
 ## Usage
 
 - Use the flexion slider to control knee flexion in 1 degree increments.
-- Click either strain surface to select adduction and internal rotation in 1 degree increments.
+- Drag the adduction/internal-rotation pad dot to set those angles in 1 degree increments.
 - Drag the translation pad dot to set anterior/posterior and medial/lateral tibial translation.
 - Use the vertical slider to set proximal/distal translation.
 - Inspect the anatomy panel to see the right femur, tibia, fibula, and ACL fibers respond to the selected kinematics.

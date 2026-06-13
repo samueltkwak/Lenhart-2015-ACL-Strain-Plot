@@ -37,6 +37,17 @@ SURFACE_CAMERA = dict(
     center=dict(x=0.0, y=0.0, z=-0.06),
     up=dict(x=0.0, y=0.0, z=1.0),
 )
+INTERACTIVE_3D_GRAPH_CONFIG = {
+    "displayModeBar": False,
+    "displaylogo": False,
+    "responsive": True,
+    "scrollZoom": True,
+}
+STATIC_GRAPH_CONFIG = {
+    "displayModeBar": False,
+    "displaylogo": False,
+    "responsive": True,
+}
 
 scroll_bar1_label = "Knee Flexion (deg)"
 translation_pad_x_label = "M/L Translation (mm): + Lateral"
@@ -1100,6 +1111,7 @@ app.layout = html.Div([
                         "marginTop": "0px",
                         "marginBottom": "0px",
                     },
+                    config=INTERACTIVE_3D_GRAPH_CONFIG,
                 ),
                 dcc.Graph(
                     id="surface-plot-am",
@@ -1110,6 +1122,7 @@ app.layout = html.Div([
                         "marginTop": "4px",
                         "marginBottom": "0px",
                     },
+                    config=INTERACTIVE_3D_GRAPH_CONFIG,
                 ),
             ], className="surface-plots", style={"flex": "1 1 auto", "minWidth": "0"}),
             html.Div(id="surface-strain-legend", style={
@@ -1136,6 +1149,7 @@ app.layout = html.Div([
                         "marginTop": "0px",
                         "marginBottom": "0px",
                     },
+                    config=INTERACTIVE_3D_GRAPH_CONFIG,
                 ),
             ], className="anatomy-panel", style={"flex": "1 1 0", "minWidth": "280px"}),
             html.Div([
@@ -1148,7 +1162,7 @@ app.layout = html.Div([
                         "marginTop": "0px",
                         "marginBottom": "0px",
                     },
-                    config={"displayModeBar": False},
+                    config=STATIC_GRAPH_CONFIG,
                 ),
             ], className="fiber-panel", style={"flex": "1 1 0", "minWidth": "280px"}),
         ], className="model-fiber-panel", style={

@@ -54,21 +54,10 @@
     }
 
     function publishPadValue(pad, input, xValue, yValue) {
-        var xKey = pad.dataset.xKey;
-        var yKey = pad.dataset.yKey;
-        var storeId = pad.dataset.storeId;
-        var data = {};
-
-        data[xKey] = xValue;
-        data[yKey] = yValue;
         setInputValue(input, inputValueForPad(pad, xValue, yValue));
-
-        if (window.dash_clientside && window.dash_clientside.set_props) {
-            window.dash_clientside.set_props(storeId, { data: data });
-        }
     }
 
-    function updateFromPointer(event, pad, dot, input) {
+    function valueFromPointer(event, pad) {
         var rect = pad.getBoundingClientRect();
         var xMin = numberFromData(pad, "xMin");
         var xMax = numberFromData(pad, "xMax");
@@ -81,8 +70,13 @@
         var xValue = snap(xMin + xRatio * (xMax - xMin), xStep, xMin, xMax);
         var yValue = snap(yMax - yRatio * (yMax - yMin), yStep, yMin, yMax);
 
-        setDotPosition(pad, dot, xValue, yValue);
-        publishPadValue(pad, input, xValue, yValue);
+        return { x: xValue, y: yValue };
+    }
+
+    function updateDotFromPointer(event, pad, dot) {
+        var value = valueFromPointer(event, pad);
+        setDotPosition(pad, dot, value.x, value.y);
+        return value;
     }
 
     function setupPad(pad) {
@@ -110,21 +104,32 @@
         }
 
         var dragging = false;
+        var pendingValue = null;
         pad.addEventListener("pointerdown", function (event) {
+            if (event.pointerType === "touch") {
+                event.preventDefault();
+            }
             dragging = true;
             dot.classList.add("dragging");
             pad.setPointerCapture(event.pointerId);
-            updateFromPointer(event, pad, dot, input);
+            pendingValue = updateDotFromPointer(event, pad, dot);
         });
 
         pad.addEventListener("pointermove", function (event) {
             if (!dragging) {
                 return;
             }
-            updateFromPointer(event, pad, dot, input);
+            if (event.pointerType === "touch") {
+                event.preventDefault();
+            }
+            pendingValue = updateDotFromPointer(event, pad, dot);
         });
 
         function stopDragging() {
+            if (pendingValue) {
+                publishPadValue(pad, input, pendingValue.x, pendingValue.y);
+            }
+            pendingValue = null;
             dragging = false;
             dot.classList.remove("dragging");
         }
