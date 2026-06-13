@@ -5,6 +5,16 @@
     box-sizing: border-box;
 }
 
+.pad-sync-input {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
 .kinematic-pad-control {
     position: relative;
     width: 240px;

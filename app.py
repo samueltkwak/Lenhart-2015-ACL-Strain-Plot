@@ -1058,8 +1058,8 @@ app.layout = html.Div([
         "anterior": 0,
         "lateral": 0,
     }),
-    dcc.Input(id="translation-input", value="0,0", type="hidden"),
-    dcc.Input(id="rotation-input", value="0,0", type="hidden"),
+    dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
+    dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
     html.Div(id="pad-client-ready", style={"display": "none"}),
     html.Div([
         dcc.Loading(
