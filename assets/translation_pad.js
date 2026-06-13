@@ -168,6 +168,48 @@
         };
     }
 
+    function cameraFromGraph(graph) {
+        if (graph && graph._lastCamera) {
+            return cloneCamera(graph._lastCamera);
+        }
+        if (graph && graph.layout && graph.layout.scene && graph.layout.scene.camera) {
+            return cloneCamera(graph.layout.scene.camera);
+        }
+        if (graph && graph._fullLayout && graph._fullLayout.scene && graph._fullLayout.scene.camera) {
+            return cloneCamera(graph._fullLayout.scene.camera);
+        }
+        return {};
+    }
+
+    function cameraFromRelayout(eventData, graph) {
+        var camera = cameraFromGraph(graph);
+
+        if (!eventData) {
+            return null;
+        }
+        if (eventData["scene.camera"]) {
+            return cloneCamera(eventData["scene.camera"]);
+        }
+        if (eventData["scene.camera.eye"]) {
+            camera.eye = Object.assign({}, eventData["scene.camera.eye"]);
+        }
+        if (eventData["scene.camera.center"]) {
+            camera.center = Object.assign({}, eventData["scene.camera.center"]);
+        }
+        if (eventData["scene.camera.up"]) {
+            camera.up = Object.assign({}, eventData["scene.camera.up"]);
+        }
+
+        if (
+            eventData["scene.camera.eye"] ||
+            eventData["scene.camera.center"] ||
+            eventData["scene.camera.up"]
+        ) {
+            return camera;
+        }
+        return null;
+    }
+
     function scaledCamera(camera, scale) {
         var nextCamera = cloneCamera(camera);
         var eye = nextCamera.eye || {};
@@ -199,6 +241,13 @@
 
         container.dataset.pinchZoomInitialized = "true";
 
+        function storeCamera(camera) {
+            var graph = graphDiv();
+            if (graph && camera) {
+                graph._lastCamera = cloneCamera(camera);
+            }
+        }
+
         function activePointerList() {
             return Object.keys(activePointers).map(function (pointerId) {
                 return activePointers[pointerId];
@@ -225,7 +274,7 @@
             }
 
             startDistance = pointerDistance(pointers[0], pointers[1]);
-            startCamera = cloneCamera(graph._fullLayout.scene.camera || {});
+            startCamera = cameraFromGraph(graph);
         }
 
         function updatePinch(event) {
@@ -246,8 +295,10 @@
 
             event.preventDefault();
             var scale = clampScale(startDistance / currentDistance);
+            var nextCamera = scaledCamera(startCamera, scale);
+            storeCamera(nextCamera);
             window.Plotly.relayout(graph, {
-                "scene.camera": scaledCamera(startCamera, scale),
+                "scene.camera": nextCamera,
             });
         }
 
@@ -288,6 +339,18 @@
         });
         container.addEventListener("pointerleave", function (event) {
             clearPointer(event.pointerId);
+        });
+
+        var graph = graphDiv();
+        if (!graph || typeof graph.on !== "function") {
+            return;
+        }
+
+        graph.on("plotly_relayout", function (eventData) {
+            var camera = cameraFromRelayout(eventData, graphDiv());
+            if (camera) {
+                storeCamera(camera);
+            }
         });
     }
 

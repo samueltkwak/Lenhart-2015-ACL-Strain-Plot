@@ -1527,6 +1527,20 @@ def make_surface_figure(
             xpad=2,
         ),
     ))
+    fig.add_trace(go.Surface(
+        x=x_values,
+        y=y_values,
+        z=np.zeros_like(z_matrix, dtype=float),
+        surfacecolor=np.zeros_like(z_matrix, dtype=float),
+        colorscale=[[0.0, "#ffffff"], [1.0, "#ffffff"]],
+        cmin=0,
+        cmax=1,
+        opacity=0.26,
+        showscale=False,
+        hoverinfo="skip",
+        name="0% strain plane",
+        contours=dict(z=dict(show=False)),
+    ))
     selected_strain = calculate_placeholder_strain(
         model_mode=model_mode,
         bundle=bundle,
