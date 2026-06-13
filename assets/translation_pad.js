@@ -54,7 +54,18 @@
     }
 
     function publishPadValue(pad, input, xValue, yValue) {
+        var xKey = pad.dataset.xKey;
+        var yKey = pad.dataset.yKey;
+        var storeId = pad.dataset.storeId;
+        var data = {};
+
+        data[xKey] = xValue;
+        data[yKey] = yValue;
         setInputValue(input, inputValueForPad(pad, xValue, yValue));
+
+        if (window.dash_clientside && window.dash_clientside.set_props) {
+            window.dash_clientside.set_props(storeId, { data: data });
+        }
     }
 
     function valueFromPointer(event, pad) {
