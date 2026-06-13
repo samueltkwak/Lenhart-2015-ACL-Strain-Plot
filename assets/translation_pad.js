@@ -154,8 +154,156 @@
         pads.forEach(setupPad);
     }
 
+    function pointerDistance(first, second) {
+        var dx = first.x - second.x;
+        var dy = first.y - second.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function cloneCamera(camera) {
+        return {
+            eye: Object.assign({}, camera.eye || {}),
+            center: Object.assign({}, camera.center || {}),
+            up: Object.assign({}, camera.up || {}),
+        };
+    }
+
+    function scaledCamera(camera, scale) {
+        var nextCamera = cloneCamera(camera);
+        var eye = nextCamera.eye || {};
+
+        nextCamera.eye = {
+            x: (Number(eye.x) || 0) * scale,
+            y: (Number(eye.y) || 0) * scale,
+            z: (Number(eye.z) || 0) * scale,
+        };
+        return nextCamera;
+    }
+
+    function clampScale(scale) {
+        return Math.min(2.8, Math.max(0.35, scale));
+    }
+
+    function setupPlotPinchZoom(container) {
+        if (!container || container.dataset.pinchZoomInitialized === "true") {
+            return;
+        }
+
+        if (!container.querySelector(".js-plotly-plot") || !window.Plotly) {
+            return;
+        }
+
+        var activePointers = {};
+        var startDistance = null;
+        var startCamera = null;
+
+        container.dataset.pinchZoomInitialized = "true";
+
+        function activePointerList() {
+            return Object.keys(activePointers).map(function (pointerId) {
+                return activePointers[pointerId];
+            });
+        }
+
+        function graphDiv() {
+            return container.querySelector(".js-plotly-plot");
+        }
+
+        function beginPinchIfReady(event) {
+            var graph = graphDiv();
+            var pointers = activePointerList();
+            if (pointers.length !== 2 || !graph._fullLayout || !graph._fullLayout.scene) {
+                return;
+            }
+
+            if (container.setPointerCapture && event.pointerId !== undefined) {
+                try {
+                    container.setPointerCapture(event.pointerId);
+                } catch (error) {
+                    // Pointer capture can fail if the browser has already released it.
+                }
+            }
+
+            startDistance = pointerDistance(pointers[0], pointers[1]);
+            startCamera = cloneCamera(graph._fullLayout.scene.camera || {});
+        }
+
+        function updatePinch(event) {
+            if (!startDistance || !startCamera) {
+                return;
+            }
+
+            var graph = graphDiv();
+            var pointers = activePointerList();
+            if (pointers.length !== 2 || !graph) {
+                return;
+            }
+
+            var currentDistance = pointerDistance(pointers[0], pointers[1]);
+            if (!currentDistance) {
+                return;
+            }
+
+            event.preventDefault();
+            var scale = clampScale(startDistance / currentDistance);
+            window.Plotly.relayout(graph, {
+                "scene.camera": scaledCamera(startCamera, scale),
+            });
+        }
+
+        function clearPointer(pointerId) {
+            delete activePointers[pointerId];
+            if (activePointerList().length < 2) {
+                startDistance = null;
+                startCamera = null;
+            }
+        }
+
+        container.addEventListener("pointerdown", function (event) {
+            if (event.pointerType !== "touch") {
+                return;
+            }
+
+            activePointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+            if (activePointerList().length >= 2) {
+                event.preventDefault();
+                beginPinchIfReady(event);
+            }
+        });
+
+        container.addEventListener("pointermove", function (event) {
+            if (event.pointerType !== "touch" || !activePointers[event.pointerId]) {
+                return;
+            }
+
+            activePointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+            updatePinch(event);
+        });
+
+        container.addEventListener("pointerup", function (event) {
+            clearPointer(event.pointerId);
+        });
+        container.addEventListener("pointercancel", function (event) {
+            clearPointer(event.pointerId);
+        });
+        container.addEventListener("pointerleave", function (event) {
+            clearPointer(event.pointerId);
+        });
+    }
+
+    function setupPlotPinchZooms() {
+        ["surface-plot-pl", "surface-plot-am", "anatomy-plot"].forEach(function (plotId) {
+            setupPlotPinchZoom(document.getElementById(plotId));
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", setupKinematicPads);
+    document.addEventListener("DOMContentLoaded", setupPlotPinchZooms);
     new MutationObserver(setupKinematicPads).observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+    new MutationObserver(setupPlotPinchZooms).observe(document.body, {
         childList: true,
         subtree: true,
     });

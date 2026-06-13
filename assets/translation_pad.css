@@ -326,6 +326,12 @@
         margin-right: auto !important;
     }
 
+    #surface-plot-pl,
+    #surface-plot-am,
+    #anatomy-plot {
+        touch-action: none;
+    }
+
     .surface-axis-controls {
         gap: 8px !important;
     }
