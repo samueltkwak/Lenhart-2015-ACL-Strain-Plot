@@ -328,7 +328,10 @@
 
     #surface-plot-pl,
     #surface-plot-am,
-    #anatomy-plot {
+    #anatomy-plot,
+    #surface-plot-pl .js-plotly-plot,
+    #surface-plot-am .js-plotly-plot,
+    #anatomy-plot .js-plotly-plot {
         touch-action: none;
     }
 
