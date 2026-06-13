@@ -1,4 +1,9 @@
 (function () {
+    if (window.__aclInteractionsLoaded) {
+        return;
+    }
+    window.__aclInteractionsLoaded = true;
+
     function numberFromData(element, name) {
         return Number(element.dataset[name]);
     }
