@@ -59,18 +59,7 @@
     }
 
     function publishPadValue(pad, input, xValue, yValue) {
-        var xKey = pad.dataset.xKey;
-        var yKey = pad.dataset.yKey;
-        var storeId = pad.dataset.storeId;
-        var data = {};
-
-        data[xKey] = xValue;
-        data[yKey] = yValue;
         setInputValue(input, inputValueForPad(pad, xValue, yValue));
-
-        if (window.dash_clientside && window.dash_clientside.set_props) {
-            window.dash_clientside.set_props(storeId, { data: data });
-        }
     }
 
     function valueFromPointer(event, pad) {
@@ -379,13 +368,13 @@
         });
     }
 
-    document.addEventListener("DOMContentLoaded", setupKinematicPads);
-    document.addEventListener("DOMContentLoaded", setupPlotPinchZooms);
-    new MutationObserver(setupKinematicPads).observe(document.body, {
-        childList: true,
-        subtree: true,
-    });
-    new MutationObserver(setupPlotPinchZooms).observe(document.body, {
+    function setupInteractions() {
+        setupKinematicPads();
+        setupPlotPinchZooms();
+    }
+
+    document.addEventListener("DOMContentLoaded", setupInteractions);
+    new MutationObserver(setupInteractions).observe(document.body, {
         childList: true,
         subtree: true,
     });

@@ -6,7 +6,7 @@ Interactive Dash visualization of ACL strain for the Lenhart 2015 model workflow
 
 The app does not load strain data from a repository, database, or external service. `app.py` evaluates the embedded 6DOF equations for the ACLam and ACLpl bundles and individual fibers.
 
-The 3DOF equation functions are still present in the source for later development, but the current deployed UI is 6DOF-only.
+The deployed UI is 6DOF-only and evaluates the embedded 6DOF equations for ACLam/ACLpl bundle strain and individual fiber strain.
 
 ## Usage
 

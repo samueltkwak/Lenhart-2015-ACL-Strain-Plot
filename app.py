@@ -110,38 +110,6 @@ def acl_fiber_color(fiber_name):
     return "#e69f00" if fiber_name.startswith("ACLam") else "#0072b2"
 
 
-THREEDOF_INDIVIDUAL_FIBER_EQUATIONS = {
-    # x0=knee_flex, x1=knee_add, x2=knee_int
-    "ACLpl1": "-0.277853300000000*x0 + (0.00124893840000000*x0 + 0.43144423)*(1.17103140000000e-7*(x0*(x0 - 21.372904) + 1.58475790000000*x1*x2 + (x2 + 0.2870663)^2)^2 + x1 + 0.473216500000000*x2 + 0.49951407) - 0.00130187367317487*x2^2 + 14.986267",
-    "ACLpl2": "(x0*(0.000125013534757098*x0 + 0.0486692403958545) + 0.00943605100000000*x1 - 4.53726933822564)^2 + (-7.29149200000000e-8*(x0 - x2)^3 + 0.00137933260000000*x1 + 0.31902942)*x2 + 0.00270856800000000*x1^2 + 0.611550200000000*x1 - 7.9574816",
-    "ACLpl3": "3.68667055408608e-6*x0^3 - 0.0996990169754504*x0 - 0.0996990169754504*(-0.00895259700000000*x0 + 0.0484209730000000*x2 + 0.6284462)^3 + 0.000196126113189468*(x0 + x1 + 0.281504000000000*x2 - 1.3717061)*x1 + 0.328682773409237*x1 + 0.224692128369878*x2 + 6.05556537129456",
-    "ACLpl4": "1/2.6043468*(0.00929182500000000*(x0 + (-0.0666799700000000*x2 + 1.1775122)^2 + 2.2517896)^2 + 0.810906400000000*(-x0 + x2) + x1) + 0.00318214180000000*(x0*(-0.00981092000000000*x2 + 0.18723786) + 0.893974700000000*x1 + x2)*x1 - 1.8224671",
-    "ACLpl5": "(0.0326471480000000*x0 + 3.78709920000000e-5*(-x0*x1 + (x1 - 3.0395112)^3 + (x1 + x1 - x2 + 1.7465912 - -1.7909743)^2) - 3.0395112)^2 + 0.254846870000000*(x0^3*(5.87098300000000e-9*(x2 - 3.207589)^2 + 1.7247597e-05) + 1.80611990000000*x1 + x2)",
-    "ACLpl6": "(-0.0356316830000000*(x0 - 0.236851230000000*(-0.162780460000000*x1 + x2)) + 4.6671023)^2 + 0.228491650000000*(4.35803050000000e-5*(x0 + 0.177725760000000*x1 + 0.00700388554420840*x2^2)^3 + x1 + x1 + x2) + 0.00145512480000000*(x1 + 0.44999388)*(x1 + x2) - 13.591203",
-    "ACLam1": "-0.00136241010000000*((x0 + 0.00428717440000000*(-x1 + x2)*x2 + 0.693863030000000*(0.794243900000000*x1 + x2 - 78.07827))^2 + (-0.000314591484672529*(-2.39869200000000*x0 + 86.53701)^2 + x0 + -0.266555580000000*x1 + 7.1516147)*(1.21719860000000*x1 + x2 + 8.552297))",
-    "ACLam2": "(-0.000138530460000000*x0 + 0.2494647)*x1 - 0.000302087720000000*(0.0184209500000000*x0*x1 - 0.00943732800000000*x2^2 - x2)^2 + (-0.00252424480000000*(x0 + 43.165283)^2 + x2)*(-0.000906290400000000*x1 - 0.000294773100000000*x2 + 0.17291246) + 6.933997",
-    "ACLam3": "-0.00151464470000000*(x0 + -0.219782740000000*(0.0283390900000000*(0.310540560000000*(x0 + x1 - x2) + x1 - 1.0504253)*x2 + x1) - 14.833601)^2 + (-0.00165030560000000*(0.383081900000000*x0 + x1 + 0.542210700000000*x2) + 0.10463336)*x2 - -0.159735710000000*x1 + 3.1270137",
-    "ACLam4": "0.138184860000000*(0.589286800000000*(x0 + 1.0993301) + -0.00352761820000000*(x0^2 + (0.245000440000000*(x0 + 0.0477366150000000*(x0 + x2)*x2) + x1 + x1 - 8.999825)*x2 + (-x1 + 0.0663720100000000*x2)^2) + x2 - 30.060455) + 0.162451600000000*x1",
-    "ACLam5": "0.0873050600000000*(-(-0.111461270000000*x0 + -0.000546637800000000*(-(-0.111358910000000*x0 - x1 + 5.6741185)^2 + (-0.147958010000000*x0 + x2 + 21.968864)*(-x1 + x2 + 8.476481)) + 5.6741157)^2 + 1.39557290000000*x1 + -0.00685543800000000*(x1 + x2 - 8.654959)^2 + x2) - 1.2718467",
-    "ACLam6": "0.000710741300000000*(-(x0 + -0.00822787800000000*(x1 + 2.8384106)*(x1 + x2 + 9.811958) - -0.00195807730000000*x2^2 - 15.594888)^2 + 1.35777258011656*x1^2 + (0.223959000000000*x2 - 1.7213081)^3 + (1/0.72047025*x1 + x2 - 10.791454)*(-x2 + 195.00777))",
-}
-
-THREEDOF_INDIVIDUAL_FIBER_MODELS = {
-    name: compile(equation.replace("^", "**"), f"<{name}_3dof_strain>", "eval")
-    for name, equation in THREEDOF_INDIVIDUAL_FIBER_EQUATIONS.items()
-}
-
-THREEDOF_MEAN_BUNDLE_EQUATIONS = {
-    # x0=knee_flex, x1=knee_add, x2=knee_int
-    "ACLpl": "(--0.00360271240000000*(0.0763059850000000*x0 - 6.4229074)^2*x0 - -1.07774770000000*((0.0900114300000000*x0 - 6.3839808)^2 + x2 - 10.6373005) + 1/0.5897782*x1)*(-1.27552560000000e-5*(-x0 + x1 + x2)*(x2 - -19.873894) + 0.25822142) + -0.000513236450000000*x0*(x2 + 0.16690251)",
-    "ACLam": "-0.000978456000000000*(-x0 + (0.00831488800000000*x0*x2 + x1 - x2 - 1.9854839)*(0.00740933050000000*x2 + 0.12993854) + 35.091446)^2 + 0.165297520000000*x1 - 0.000576448448450400*(x1 + x2)^2 + 0.118142330000000*x2 + 0.27168083",
-}
-
-THREEDOF_MEAN_BUNDLE_MODELS = {
-    name: compile(equation.replace("^", "**"), f"<{name}_3dof_mean_strain>", "eval")
-    for name, equation in THREEDOF_MEAN_BUNDLE_EQUATIONS.items()
-}
-
 SIXDOF_EQUATIONS = {
     # x0=knee_flex, x1=knee_add, x2=knee_int, x3=knee_ant, x4=knee_prox, x5=knee_lat
     "ACLpl1": "-(x0 - 34.809135)*(63.4788440000000*x3 + 0.2761004) + (x0*x4 - 276.202820000000*x3)^2 + 0.441463680000000*x1 - 29.8360250000000*(2*x1 + x2 - 2301.61748931002*x5 + 43.210583)*x5 + 0.208517245543903*x2 - 3698.33840000000*x4 + 5.7335176",
@@ -182,26 +150,20 @@ SIXDOF_EQUATION_DISPLAY_ORDER = [
     "ACLpl6",
 ]
 
-
-def threedof_variables(flexion, adduction, internal_rotation):
-    return {
-        "x0": flexion,
-        "x1": adduction,
-        "x2": internal_rotation,
-    }
-
-
-def calculate_3dof_individual_fiber_strains(flexion, adduction, internal_rotation):
-    values = {}
-    variables = threedof_variables(flexion, adduction, internal_rotation)
-    for fiber_name, model in THREEDOF_INDIVIDUAL_FIBER_MODELS.items():
-        values[fiber_name] = eval(model, {"__builtins__": {}}, variables)
-    return values
-
-
-def calculate_3dof_bundle_strain(bundle, flexion, adduction, internal_rotation):
-    variables = threedof_variables(flexion, adduction, internal_rotation)
-    return eval(THREEDOF_MEAN_BUNDLE_MODELS[bundle], {"__builtins__": {}}, variables)
+ACL_FIBER_NAMES = (
+    "ACLam1",
+    "ACLam2",
+    "ACLam3",
+    "ACLam4",
+    "ACLam5",
+    "ACLam6",
+    "ACLpl1",
+    "ACLpl2",
+    "ACLpl3",
+    "ACLpl4",
+    "ACLpl5",
+    "ACLpl6",
+)
 
 
 def sixdof_variables(
@@ -260,26 +222,11 @@ def calculate_6dof_individual_fiber_strains(
             lateral_translation=lateral_translation,
             proximal_translation=proximal_translation,
         )
-        for fiber_name in THREEDOF_INDIVIDUAL_FIBER_EQUATIONS
+        for fiber_name in ACL_FIBER_NAMES
     }
 
 
-def calculate_3dof_placeholder_strain(
-    bundle,
-    flexion,
-    adduction,
-    internal_rotation,
-):
-    return calculate_3dof_bundle_strain(
-        bundle=bundle,
-        flexion=flexion,
-        adduction=adduction,
-        internal_rotation=internal_rotation,
-    )
-
-
-def calculate_placeholder_strain(
-    model_mode,
+def calculate_bundle_strain(
     bundle,
     flexion,
     anterior_translation,
@@ -288,14 +235,6 @@ def calculate_placeholder_strain(
     adduction,
     internal_rotation,
 ):
-    if model_mode == "3DOF":
-        return calculate_3dof_placeholder_strain(
-            bundle=bundle,
-            flexion=flexion,
-            adduction=adduction,
-            internal_rotation=internal_rotation,
-        )
-
     return calculate_6dof_strain(
         target=bundle,
         flexion=flexion,
@@ -309,7 +248,6 @@ def calculate_placeholder_strain(
 
 @lru_cache(maxsize=512)
 def get_z_matrix(
-    model_mode,
     bundle,
     x_axis,
     y_axis,
@@ -338,8 +276,7 @@ def get_z_matrix(
     surface_values[x_definition["param"]] = x_grid
     surface_values[y_definition["param"]] = y_grid
 
-    return calculate_placeholder_strain(
-        model_mode=model_mode,
+    return calculate_bundle_strain(
         bundle=bundle,
         **surface_values,
     )
@@ -918,7 +855,6 @@ def current_acl_fibers(
 
 
 def make_fiber_panel_figure(
-    model_mode,
     flexion,
     adduction,
     internal_rotation,
@@ -934,42 +870,26 @@ def make_fiber_panel_figure(
         lateral_translation,
         proximal_translation,
     )
-    if model_mode == "3DOF":
-        modeled_strains = calculate_3dof_individual_fiber_strains(
-            flexion=flexion,
-            adduction=adduction,
-            internal_rotation=internal_rotation,
-        )
-        bundle_mean_strains = {
-            bundle_name: float(calculate_3dof_bundle_strain(
-                bundle=bundle_name,
-                flexion=flexion,
-                adduction=adduction,
-                internal_rotation=internal_rotation,
-            ))
-            for bundle_name in ("ACLpl", "ACLam")
-        }
-    else:
-        modeled_strains = calculate_6dof_individual_fiber_strains(
+    modeled_strains = calculate_6dof_individual_fiber_strains(
+        flexion=flexion,
+        adduction=adduction,
+        internal_rotation=internal_rotation,
+        anterior_translation=anterior_translation,
+        lateral_translation=lateral_translation,
+        proximal_translation=proximal_translation,
+    )
+    bundle_mean_strains = {
+        bundle_name: float(calculate_6dof_strain(
+            target=bundle_name,
             flexion=flexion,
             adduction=adduction,
             internal_rotation=internal_rotation,
             anterior_translation=anterior_translation,
             lateral_translation=lateral_translation,
             proximal_translation=proximal_translation,
-        )
-        bundle_mean_strains = {
-            bundle_name: float(calculate_6dof_strain(
-                target=bundle_name,
-                flexion=flexion,
-                adduction=adduction,
-                internal_rotation=internal_rotation,
-                anterior_translation=anterior_translation,
-                lateral_translation=lateral_translation,
-                proximal_translation=proximal_translation,
-            ))
-            for bundle_name in ("ACLpl", "ACLam")
-        }
+        ))
+        for bundle_name in ("ACLpl", "ACLam")
+    }
 
     for fiber in fibers:
         strain = float(modeled_strains[fiber["name"]])
@@ -1060,7 +980,6 @@ app.layout = html.Div([
     }),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
-    html.Div(id="pad-client-ready", style={"display": "none"}),
     html.Div([
         dcc.Loading(
             id="model-loading",
@@ -1245,10 +1164,7 @@ app.layout = html.Div([
                 **{
                     "data-pad-kind": "translation",
                     "data-input-id": "translation-input",
-                    "data-store-id": "translation-store",
                     "data-dot-id": "translation-dot",
-                    "data-x-key": "lateral",
-                    "data-y-key": "anterior",
                     "data-input-order": "y,x",
                     "data-x-min": min(LATERAL_TRANSLATION_VALUES),
                     "data-x-max": max(LATERAL_TRANSLATION_VALUES),
@@ -1277,10 +1193,7 @@ app.layout = html.Div([
                 **{
                     "data-pad-kind": "rotation",
                     "data-input-id": "rotation-input",
-                    "data-store-id": "surface-selection-store",
                     "data-dot-id": "rotation-dot",
-                    "data-x-key": "adduction",
-                    "data-y-key": "rotation",
                     "data-input-order": "x,y",
                     "data-x-min": min(ADDUCTION_VALUES),
                     "data-x-max": max(ADDUCTION_VALUES),
@@ -1327,18 +1240,6 @@ app.layout = html.Div([
     }),
     make_regression_equation_section(),
 ], className="app-root")
-
-
-app.clientside_callback(
-    """
-    function(translationValue, rotationValue) {
-        return "";
-    }
-    """,
-    Output("pad-client-ready", "children"),
-    Input("translation-input", "value"),
-    Input("rotation-input", "value"),
-)
 
 
 @app.callback(
@@ -1474,7 +1375,6 @@ def update_surface_selection(rotation_value, reset_clicks, current_selection):
 
 
 def make_surface_figure(
-    model_mode,
     bundle,
     current_values,
     x_axis,
@@ -1541,8 +1441,7 @@ def make_surface_figure(
         name="0% strain plane",
         contours=dict(z=dict(show=False)),
     ))
-    selected_strain = calculate_placeholder_strain(
-        model_mode=model_mode,
+    selected_strain = calculate_bundle_strain(
         bundle=bundle,
         **current_values,
     )
@@ -1665,7 +1564,6 @@ def update_surface_plots(
     anterior_translation = translation["anterior"]
     lateral_translation = translation["lateral"]
     proximal_translation = PROXIMAL_TRANSLATION_VALUES[proximal_ix]
-    model_mode = "6DOF"
     surface_selection = surface_selection or SURFACE_SELECTION_DEFAULT
     selected_adduction = surface_selection["adduction"]
     selected_rotation = surface_selection["rotation"]
@@ -1685,7 +1583,6 @@ def update_surface_plots(
     camera = stored_camera if stored_camera else SURFACE_CAMERA
 
     surface_pl_z = get_z_matrix(
-        model_mode=model_mode,
         bundle="ACLpl",
         x_axis=x_axis,
         y_axis=y_axis,
@@ -1697,7 +1594,6 @@ def update_surface_plots(
         proximal_translation=proximal_translation,
     )
     surface_am_z = get_z_matrix(
-        model_mode=model_mode,
         bundle="ACLam",
         x_axis=x_axis,
         y_axis=y_axis,
@@ -1711,7 +1607,6 @@ def update_surface_plots(
     shared_z_range = shared_z_range_for_surfaces(surface_pl_z, surface_am_z)
 
     surface_pl_fig = make_surface_figure(
-        model_mode=model_mode,
         bundle="ACLpl",
         current_values=current_values,
         x_axis=x_axis,
@@ -1722,7 +1617,6 @@ def update_surface_plots(
         showscale=False,
     )
     surface_am_fig = make_surface_figure(
-        model_mode=model_mode,
         bundle="ACLam",
         current_values=current_values,
         x_axis=x_axis,
@@ -1761,7 +1655,6 @@ def update_anatomy_and_fibers(
     anterior_translation = translation["anterior"]
     lateral_translation = translation["lateral"]
     proximal_translation = PROXIMAL_TRANSLATION_VALUES[proximal_ix]
-    model_mode = "6DOF"
     surface_selection = surface_selection or SURFACE_SELECTION_DEFAULT
     selected_adduction = surface_selection["adduction"]
     selected_rotation = surface_selection["rotation"]
@@ -1777,7 +1670,6 @@ def update_anatomy_and_fibers(
         camera=anatomy_camera,
     )
     fiber_fig = make_fiber_panel_figure(
-        model_mode=model_mode,
         flexion=flexion,
         adduction=selected_adduction,
         internal_rotation=selected_rotation,
