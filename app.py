@@ -1060,6 +1060,7 @@ app.layout = html.Div([
     }),
     dcc.Input(id="translation-input", value="0,0", type="hidden"),
     dcc.Input(id="rotation-input", value="0,0", type="hidden"),
+    html.Div(id="pad-client-ready", style={"display": "none"}),
     html.Div([
         dcc.Loading(
             id="model-loading",
@@ -1326,6 +1327,18 @@ app.layout = html.Div([
     }),
     make_regression_equation_section(),
 ], className="app-root")
+
+
+app.clientside_callback(
+    """
+    function(translationValue, rotationValue) {
+        return "";
+    }
+    """,
+    Output("pad-client-ready", "children"),
+    Input("translation-input", "value"),
+    Input("rotation-input", "value"),
+)
 
 
 @app.callback(
