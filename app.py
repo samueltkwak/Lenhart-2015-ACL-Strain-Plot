@@ -549,12 +549,8 @@ def knee_transforms(
     proximal_translation,
 ):
     flexion_rad = np.deg2rad(flexion)
-    # The OpenSim equation convention is +adduction; this display transform
-    # needs the opposite sign to show negative values as visual abduction.
-    adduction_rad = np.deg2rad(-adduction)
-    # Positive internal rotation should move anterior tibia medially in the
-    # displayed right-knee anatomy; equations still receive +knee_int.
-    rotation_rad = np.deg2rad(-internal_rotation)
+    adduction_rad = np.deg2rad(adduction)
+    rotation_rad = np.deg2rad(internal_rotation)
     femur_transform = rotation_z(flexion_rad / 2)
     tibia_transform = (
         rotation_z(-flexion_rad / 2)
@@ -564,7 +560,7 @@ def knee_transforms(
     relative_translation = np.array([
         anterior_translation / 1000,
         proximal_translation / 1000,
-        -lateral_translation / 1000,
+        lateral_translation / 1000,
     ])
     femur_translation = np.zeros(3)
     tibia_translation = femur_transform @ relative_translation
@@ -582,7 +578,9 @@ def transform_coordinates(x_values, y_values, z_values, transform, translation):
 
 
 def display_coordinates(x_values, y_values, z_values):
-    return x_values, z_values, y_values
+    # OpenSim uses x=anterior, y=superior, and +z=lateral for this right knee.
+    # Negating z while making y vertical preserves handedness in Plotly.
+    return x_values, -z_values, y_values
 
 
 def mesh_trace(name, mesh, transform=None, translation=None):
@@ -691,7 +689,7 @@ def orientation_label_traces():
         y=display_y,
         z=display_z,
         mode="text",
-        text=["Medial", "Lateral"],
+        text=["Lateral", "Medial"],
         textfont=dict(color="#333333", size=13),
         textposition="middle center",
         hoverinfo="skip",
