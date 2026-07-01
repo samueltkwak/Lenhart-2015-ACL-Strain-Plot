@@ -1103,24 +1103,6 @@ app.layout = html.Div([
         "marginBottom": "0px",
         "flexWrap": "wrap",
     }),
-    html.Div([
-        html.Label(scroll_bar1_label, style={"fontSize": "16px"}),
-        dcc.Slider(
-            id="flexion-slider",
-            min=0,
-            max=len(FLEXION_VALUES) - 1,
-            value=0,
-            step=1,
-            marks={i: str(val) for i, val in enumerate(FLEXION_VALUES) if val % 10 == 0},
-            included=False,
-        ),
-    ], className="flexion-control", style={
-        "padding": "0px",
-        "marginTop": "0px",
-        "width": "50vw",
-        "minWidth": "360px",
-        "margin": "auto",
-    }),
     html.Div(id="translation-readout", className="kinematic-readout", style={
         "margin": "10px auto 4px",
         "width": "72vw",
@@ -1145,6 +1127,23 @@ app.layout = html.Div([
         "display": "flex",
         "justifyContent": "center",
         "margin": "4px auto 0",
+    }),
+    html.Div([
+        html.Label(scroll_bar1_label, style={"fontSize": "16px"}),
+        dcc.Slider(
+            id="flexion-slider",
+            min=0,
+            max=len(FLEXION_VALUES) - 1,
+            value=0,
+            step=1,
+            marks={i: str(val) for i, val in enumerate(FLEXION_VALUES) if val % 10 == 0},
+            included=False,
+        ),
+    ], className="flexion-control", style={
+        "padding": "0px",
+        "width": "50vw",
+        "minWidth": "360px",
+        "margin": "10px auto 0",
     }),
     html.Div([
         html.Div([
