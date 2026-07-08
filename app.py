@@ -455,6 +455,51 @@ def make_regression_equation_section():
     })
 
 
+def make_model_note_section():
+    references = [
+        "Beynnon B, Howe JG, Pope MH, Johnson RJ, Fleming BC. The measurement of anterior cruciate ligament strain in vivo. Int Orthop. 1992 Mar 1;16(1):1-12. doi:10.1007/BF00182976",
+        "Foody JN, Li GK, Bradley PX, Kuehn SJ, Spritzer CE, Kosinski AS, et al. A comparison of three methods for establishing an ACL reference length in vivo. J Biomech. 2024 Nov 1;176:112337. doi:10.1016/j.jbiomech.2024.112337",
+    ]
+
+    return html.Div([
+        html.Div("Model Note", style={
+            "fontSize": "13px",
+            "fontWeight": "600",
+            "marginBottom": "6px",
+        }),
+        html.Div(
+            "This visualizer uses a modified version of the Lenhart 2015 ACL model. "
+            "The slack length of all ACL fibers was decreased by 10.4%, yielding an "
+            "average ACL strain of approximately 3.7% at neutral stance to better "
+            "align with reported in vivo values. Because of this modification, "
+            "outputs may differ from direct replication using the original Lenhart "
+            "2015 model.",
+            style={
+                "fontSize": "11px",
+                "color": "#333333",
+                "marginBottom": "8px",
+            },
+        ),
+        html.Ol([
+            html.Li(reference, style={"marginBottom": "3px"})
+            for reference in references
+        ], style={
+            "fontSize": "10.5px",
+            "color": "#444444",
+            "margin": "0",
+            "paddingLeft": "18px",
+        }),
+    ], style={
+        "fontSize": "11px",
+        "lineHeight": "1.35",
+        "maxWidth": "1180px",
+        "margin": "18px auto 0",
+        "padding": "8px 12px",
+        "color": "#222222",
+        "boxSizing": "border-box",
+    })
+
+
 def make_kinematic_readout_item(label, value, unit):
     return html.Div([
         html.Div(label, style={
@@ -1235,6 +1280,7 @@ app.layout = html.Div([
         "margin": "auto",
         "flexWrap": "wrap",
     }),
+    make_model_note_section(),
     make_regression_equation_section(),
 ], className="app-root")
 
