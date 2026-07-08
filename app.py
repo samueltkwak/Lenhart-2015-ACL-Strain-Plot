@@ -457,8 +457,9 @@ def make_regression_equation_section():
 
 def make_model_note_section():
     references = [
-        "Beynnon B, Howe JG, Pope MH, Johnson RJ, Fleming BC. The measurement of anterior cruciate ligament strain in vivo. Int Orthop. 1992 Mar 1;16(1):1-12. doi:10.1007/BF00182976",
-        "Foody JN, Li GK, Bradley PX, Kuehn SJ, Spritzer CE, Kosinski AS, et al. A comparison of three methods for establishing an ACL reference length in vivo. J Biomech. 2024 Nov 1;176:112337. doi:10.1016/j.jbiomech.2024.112337",
+        "Lenhart RL, Kaiser J, Smith CR, Thelen DG. Prediction and Validation of Load-Dependent Behavior of the Tibiofemoral and Patellofemoral Joints During Movement. Ann Biomed Eng. 2015;43(11):2675-85. doi:10.1007/s10439-015-1326-3",
+        "Beynnon B, Howe JG, Pope MH, Johnson RJ, Fleming BC. The measurement of anterior cruciate ligament strain in vivo. Int Orthop. 1992;16(1):1-12. doi:10.1007/BF00182976",
+        "Foody JN, Li GK, Bradley PX, Kuehn SJ, Spritzer CE, Kosinski AS, et al. A comparison of three methods for establishing an ACL reference length in vivo. J Biomech. 2024;176:112337. doi:10.1016/j.jbiomech.2024.112337",
     ]
 
     return html.Div([
