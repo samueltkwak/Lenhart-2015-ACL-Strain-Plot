@@ -615,7 +615,7 @@ def make_data_conversion_tab():
             html.Div("Required CSV Format", className="conversion-subhead"),
             html.Table([
                 html.Thead(html.Tr([
-                    html.Th("Column"),
+                    html.Th("Column Label"),
                     html.Th("Meaning"),
                     html.Th("Convention"),
                 ])),
