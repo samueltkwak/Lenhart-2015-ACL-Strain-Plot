@@ -299,7 +299,7 @@
     align-items: stretch;
 }
 
-.playback-speed-option {
+.playback-speed-button {
     min-width: 52px;
     padding: 6px 8px;
     border: 1px solid #8f8f8f;
@@ -312,9 +312,10 @@
     cursor: pointer;
 }
 
-.playback-speed-radio,
-.conversion-file-radio {
-    margin-right: 4px;
+.playback-speed-button-selected {
+    border-color: #8f1528;
+    background: #b0192e;
+    color: #ffffff;
 }
 
 .conversion-results-grid {

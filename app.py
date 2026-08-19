@@ -828,14 +828,7 @@ def make_data_conversion_tab():
                     html.Button([html.Span("||", className="playback-icon"), html.Span("Pause", className="playback-label")], id="conversion-pause", n_clicks=0, className="playback-button"),
                     html.Button([html.Span(">|", className="playback-icon"), html.Span("Next", className="playback-label")], id="conversion-next-frame", n_clicks=0, className="playback-button"),
                 ], className="playback-transport-buttons"),
-                dcc.RadioItems(
-                    id="conversion-speed",
-                    options=PLAYBACK_SPEED_OPTIONS,
-                    value=1.0,
-                    className="playback-speed-selector",
-                    labelClassName="playback-speed-option",
-                    inputClassName="playback-speed-radio",
-                ),
+                html.Div(id="conversion-speed-button-wrap", className="playback-speed-selector"),
             ], className="conversion-playback-controls"),
             html.Div([
                 html.Div([
@@ -1904,10 +1897,10 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
     Input("conversion-stop", "n_clicks"),
     Input("conversion-prev-frame", "n_clicks"),
     Input("conversion-next-frame", "n_clicks"),
-    Input("conversion-speed", "value"),
     Input("conversion-strain-graph", "clickData"),
     Input("conversion-playback-interval", "n_intervals"),
     Input({"type": "conversion-file-tab", "index": ALL}, "n_clicks"),
+    Input({"type": "conversion-speed-button", "speed": ALL}, "n_clicks"),
     State("conversion-playback-store", "data"),
 )
 def update_conversion_playback(
@@ -1917,10 +1910,10 @@ def update_conversion_playback(
     stop_clicks,
     prev_clicks,
     next_clicks,
-    speed,
     graph_click,
     interval_ticks,
     file_clicks,
+    speed_clicks,
     playback_data,
 ):
     trigger = callback_context.triggered[0]["prop_id"] if callback_context.triggered else ""
@@ -1942,7 +1935,7 @@ def update_conversion_playback(
             "file_index": 0,
             "frame_index": 0,
             "playing": False,
-            "speed": float(speed or 1.0),
+            "speed": float(playback.get("speed", 1.0) or 1.0),
             "speed_accumulator": 0.0,
         })
         return playback, True
@@ -1950,19 +1943,24 @@ def update_conversion_playback(
     if trigger.startswith("{"):
         try:
             clicked_id = json.loads(trigger.split(".", maxsplit=1)[0])
-            playback["file_index"] = int(clicked_id.get("index", 0))
-            playback["frame_index"] = 0
-            playback["playing"] = False
-            playback["speed_accumulator"] = 0.0
+            if clicked_id.get("type") == "conversion-file-tab":
+                playback["file_index"] = int(clicked_id.get("index", 0))
+                playback["frame_index"] = 0
+                playback["playing"] = False
+                playback["speed_accumulator"] = 0.0
+                return playback, True
+            if clicked_id.get("type") == "conversion-speed-button":
+                playback["speed"] = float(clicked_id.get("speed", 1.0) or 1.0)
+                playback["speed_accumulator"] = 0.0
+                return playback, not playback.get("playing", False)
         except (ValueError, TypeError, json.JSONDecodeError):
             pass
-        return playback, True
+        return playback, not playback.get("playing", False)
 
     file_info, file_index = selected_conversion_file(result_data, playback)
     frame_count = len(file_info.get("output_rows", [])) if file_info else 0
     current_frame = clamp_frame_index(file_info, playback.get("frame_index", 0)) if file_info else 0
     playback["frame_index"] = current_frame
-    playback["speed"] = float(speed or playback.get("speed", 1.0) or 1.0)
 
     if trigger == "conversion-play.n_clicks":
         playback["playing"] = True
@@ -1980,8 +1978,6 @@ def update_conversion_playback(
         playback["playing"] = False
         playback["frame_index"] = min(max(frame_count - 1, 0), current_frame + 1)
         playback["speed_accumulator"] = 0.0
-    elif trigger == "conversion-speed.value":
-        playback["speed"] = float(speed or 1.0)
     elif trigger == "conversion-strain-graph.clickData" and graph_click:
         points = graph_click.get("points") or []
         if points and file_info:
@@ -2006,6 +2002,7 @@ def update_conversion_playback(
 
 @app.callback(
     Output("conversion-file-selector-wrap", "children"),
+    Output("conversion-speed-button-wrap", "children"),
     Output("conversion-anatomy-plot", "figure"),
     Output("conversion-strain-graph", "figure"),
     Output("conversion-value-table", "children"),
@@ -2018,6 +2015,16 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
     if not files:
         return (
             "",
+            [
+                html.Button(
+                    option["label"],
+                    id={"type": "conversion-speed-button", "speed": option["value"]},
+                    n_clicks=0,
+                    className="playback-speed-button playback-speed-button-selected"
+                    if option["value"] == 1.0 else "playback-speed-button",
+                )
+                for option in PLAYBACK_SPEED_OPTIONS
+            ],
             make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
             make_empty_conversion_figure("Process a CSV file to view strain traces."),
             "",
@@ -2039,9 +2046,21 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
         )
         for index, file_data in enumerate(files)
     ]
+    current_speed = float((playback_data or {}).get("speed", 1.0) or 1.0)
+    speed_buttons = [
+        html.Button(
+            option["label"],
+            id={"type": "conversion-speed-button", "speed": option["value"]},
+            n_clicks=0,
+            className="playback-speed-button playback-speed-button-selected"
+            if float(option["value"]) == current_speed else "playback-speed-button",
+        )
+        for option in PLAYBACK_SPEED_OPTIONS
+    ]
 
     return (
         file_buttons,
+        speed_buttons,
         make_anatomy_figure(
             flexion=kinematics["flexion"],
             adduction=kinematics["adduction"],
