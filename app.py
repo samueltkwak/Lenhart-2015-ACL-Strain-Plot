@@ -1066,12 +1066,17 @@ app.layout = html.Div([
         ),
     ], className="visual-loading-overlay"),
     dcc.Tabs([
+        dcc.Tab(label="Data Conversion", value="data-conversion", children=[
+            html.Div(className="data-conversion-placeholder"),
+        ], className="tool-tab", selected_className="tool-tab-selected"),
         dcc.Tab(
             label="Generic Strain Visualizer",
             value="visualizer",
             className="tool-tab",
             selected_className="tool-tab-selected",
             children=[
+    html.Div([
+        html.Div([
             html.Div([
                 html.Div([
                     html.Label("Surface X Axis", style={"fontSize": "13px", "fontWeight": "600"}),
@@ -1095,52 +1100,57 @@ app.layout = html.Div([
                         style={"fontSize": "13px"},
                     ),
                 ], style={"width": "220px"}),
-    ], className="surface-axis-controls", style={
-        "display": "flex",
-        "gap": "12px",
-        "justifyContent": "center",
-        "alignItems": "end",
-        "margin": "0 auto 6px",
-        "flexWrap": "wrap",
-    }),
-    html.Div([
-        html.Div([
+            ], className="surface-axis-controls", style={
+                "display": "flex",
+                "gap": "12px",
+                "justifyContent": "center",
+                "alignItems": "end",
+                "margin": "0 auto 6px",
+                "flexWrap": "wrap",
+            }),
             html.Div([
-                dcc.Graph(
-                    id="surface-plot-pl",
-                    style={
-                        "width": "100%",
-                        "height": "29.5vh",
-                        "margin": "auto",
-                        "marginTop": "0px",
-                        "marginBottom": "0px",
-                    },
-                    config=INTERACTIVE_3D_GRAPH_CONFIG,
-                ),
-                dcc.Graph(
-                    id="surface-plot-am",
-                    style={
-                        "width": "100%",
-                        "height": "29.5vh",
-                        "margin": "auto",
-                        "marginTop": "4px",
-                        "marginBottom": "0px",
-                    },
-                    config=INTERACTIVE_3D_GRAPH_CONFIG,
-                ),
-            ], className="surface-plots", style={"flex": "1 1 auto", "minWidth": "0"}),
-            html.Div(id="surface-strain-legend", style={
-                "flex": "0 0 58px",
-                "height": "60vh",
-                "padding": "4px 0",
-                "boxSizing": "border-box",
+                html.Div([
+                    dcc.Graph(
+                        id="surface-plot-pl",
+                        style={
+                            "width": "100%",
+                            "height": "29.5vh",
+                            "margin": "auto",
+                            "marginTop": "0px",
+                            "marginBottom": "0px",
+                        },
+                        config=INTERACTIVE_3D_GRAPH_CONFIG,
+                    ),
+                    dcc.Graph(
+                        id="surface-plot-am",
+                        style={
+                            "width": "100%",
+                            "height": "29.5vh",
+                            "margin": "auto",
+                            "marginTop": "4px",
+                            "marginBottom": "0px",
+                        },
+                        config=INTERACTIVE_3D_GRAPH_CONFIG,
+                    ),
+                ], className="surface-plots", style={"flex": "1 1 auto", "minWidth": "0"}),
+                html.Div(id="surface-strain-legend", style={
+                    "flex": "0 0 58px",
+                    "height": "60vh",
+                    "padding": "4px 0",
+                    "boxSizing": "border-box",
+                }),
+            ], className="surface-plot-row", style={
+                "display": "flex",
+                "gap": "6px",
+                "alignItems": "stretch",
+                "minWidth": "0",
             }),
         ], className="surface-panel", style={
             "flex": "0 1 calc(40% - 6px)",
             "minWidth": "430px",
             "display": "flex",
-            "gap": "6px",
-            "alignItems": "stretch",
+            "flexDirection": "column",
+            "gap": "0",
         }),
         html.Div([
             html.Div([
@@ -1148,7 +1158,7 @@ app.layout = html.Div([
                     id="anatomy-plot",
                     style={
                         "width": "100%",
-                        "height": "60vh",
+                        "height": "calc(60vh + 52px)",
                         "margin": "auto",
                         "marginTop": "0px",
                         "marginBottom": "0px",
@@ -1161,7 +1171,7 @@ app.layout = html.Div([
                     id="fiber-plot",
                     style={
                         "width": "100%",
-                        "height": "60vh",
+                        "height": "calc(60vh + 52px)",
                         "margin": "auto",
                         "marginTop": "0px",
                         "marginBottom": "0px",
@@ -1323,9 +1333,6 @@ app.layout = html.Div([
     }),
             ],
         ),
-        dcc.Tab(label="Data Conversion", value="data-conversion", children=[
-            html.Div(className="data-conversion-placeholder"),
-        ], className="tool-tab", selected_className="tool-tab-selected"),
     ], value="visualizer", className="tool-tabs", parent_className="tool-tabs-wrap"),
     make_model_note_section(),
     make_regression_equation_section(),
