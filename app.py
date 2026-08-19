@@ -826,7 +826,7 @@ def make_data_conversion_tab():
                 html.Div([
                     html.Button([html.Span("|<", className="playback-icon"), html.Span("Stop", className="playback-label")], id="conversion-stop", n_clicks=0, className="playback-button"),
                     html.Button([html.Span("<", className="playback-icon"), html.Span("Prev", className="playback-label")], id="conversion-prev-frame", n_clicks=0, className="playback-button"),
-                    html.Button([html.Span(">", className="playback-icon"), html.Span("Play", className="playback-label")], id="conversion-play", n_clicks=0, className="playback-button playback-primary"),
+                    html.Button([html.Span(">", className="playback-icon"), html.Span("Play", className="playback-label")], id="conversion-play", n_clicks=0, className="playback-button"),
                     html.Button([html.Span("||", className="playback-icon"), html.Span("Pause", className="playback-label")], id="conversion-pause", n_clicks=0, className="playback-button"),
                     html.Button([html.Span(">|", className="playback-icon"), html.Span("Next", className="playback-label")], id="conversion-next-frame", n_clicks=0, className="playback-button"),
                 ], className="playback-transport-buttons"),
@@ -1873,6 +1873,21 @@ def download_conversion_output(download_clicks, result_data):
     if not download_clicks or not result_data or not result_data.get("files"):
         return no_update
     return conversion_download_payload(result_data["files"])
+
+
+@app.callback(
+    Output("conversion-play", "className"),
+    Output("conversion-pause", "className"),
+    Input("conversion-playback-store", "data"),
+)
+def update_playback_button_state(playback_data):
+    is_playing = bool((playback_data or {}).get("playing"))
+    active_class = "playback-button playback-primary"
+    inactive_class = "playback-button"
+    return (
+        active_class if is_playing else inactive_class,
+        inactive_class if is_playing else active_class,
+    )
 
 
 @app.callback(
