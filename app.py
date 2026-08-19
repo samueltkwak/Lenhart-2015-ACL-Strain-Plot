@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import dash
-from dash import dcc, html, Input, Output, State, callback_context, no_update
+from dash import dcc, html, Input, Output, State, ALL, callback_context, no_update
 import numpy as np
 import plotly.graph_objects as go
 
@@ -164,6 +164,14 @@ REQUIRED_UPLOAD_COLUMNS = (
     "lateral_translation_mm",
 )
 CONVERSION_CHUNK_FRAMES = 500
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_UPLOAD_FRAMES = 25000
+PLAYBACK_INTERVAL_MS = 100
+PLAYBACK_SPEED_OPTIONS = (
+    {"label": "0.25x", "value": 0.25},
+    {"label": "0.5x", "value": 0.5},
+    {"label": "1x", "value": 1.0},
+)
 
 ACL_FIBER_NAMES = (
     "ACLam1",
@@ -266,6 +274,10 @@ def parse_uploaded_csv(contents, filename):
         raise ValueError("Missing upload contents.")
 
     _, encoded = contents.split(",", 1)
+    approximate_bytes = (len(encoded) * 3) // 4
+    if approximate_bytes > MAX_UPLOAD_BYTES:
+        raise ValueError("File is larger than the 10 MB upload limit.")
+
     decoded = base64.b64decode(encoded).decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(decoded))
     headers = reader.fieldnames or []
@@ -355,6 +367,149 @@ def conversion_download_payload(files):
         "type": "application/zip",
         "base64": True,
     }
+
+
+def numeric_row_value(row, column, default=0):
+    try:
+        return float(row.get(column, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def clamp_frame_index(file_info, frame_index):
+    row_count = len(file_info.get("output_rows", []))
+    if row_count <= 0:
+        return 0
+    return max(0, min(int(frame_index or 0), row_count - 1))
+
+
+def make_empty_conversion_figure(message):
+    fig = go.Figure()
+    fig.add_annotation(
+        text=message,
+        x=0.5,
+        y=0.5,
+        xref="paper",
+        yref="paper",
+        showarrow=False,
+        font=dict(size=14, color="#555555"),
+    )
+    fig.update_layout(
+        margin=dict(l=34, r=12, t=18, b=34),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+    )
+    return fig
+
+
+def make_conversion_strain_figure(file_info, frame_index):
+    output_rows = file_info.get("output_rows", [])
+    if not output_rows:
+        return make_empty_conversion_figure("Processed strain traces will appear here.")
+
+    frame_index = clamp_frame_index(file_info, frame_index)
+    frames = [numeric_row_value(row, "frame", index + 1) for index, row in enumerate(output_rows)]
+    current_frame = frames[frame_index]
+
+    fig = go.Figure()
+    for target in CONVERSION_OUTPUT_COLUMNS:
+        is_bundle = target in ("ACLam", "ACLpl")
+        fig.add_trace(go.Scatter(
+            x=frames,
+            y=[numeric_row_value(row, target) for row in output_rows],
+            mode="lines",
+            name=target,
+            line=dict(
+                color=acl_fiber_color(target),
+                width=3.5 if is_bundle else 1.2,
+            ),
+            opacity=1.0 if is_bundle else 0.32,
+            hovertemplate=f"{target}<br>Frame: %{{x}}<br>Strain: %{{y:.2f}}%<extra></extra>",
+            showlegend=False,
+        ))
+
+    fig.add_shape(
+        type="line",
+        x0=current_frame,
+        x1=current_frame,
+        y0=0,
+        y1=1,
+        xref="x",
+        yref="paper",
+        line=dict(color="#111111", width=2),
+    )
+    fig.update_layout(
+        margin=dict(l=42, r=12, t=18, b=40),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        hovermode="x unified",
+        uirevision=file_info.get("name", "conversion-strain"),
+        xaxis=dict(title="Frame Number", showgrid=True, gridcolor="#eeeeee"),
+        yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee"),
+    )
+    return fig
+
+
+def make_conversion_value_table(file_info, frame_index):
+    output_rows = file_info.get("output_rows", [])
+    if not output_rows:
+        return html.Div("No processed values yet.", className="conversion-status-text")
+
+    frame_index = clamp_frame_index(file_info, frame_index)
+    row = output_rows[frame_index]
+    return html.Table([
+        html.Thead(html.Tr([
+            html.Th("Fiber/Bundle"),
+            html.Th("Strain (%)"),
+        ])),
+        html.Tbody([
+            html.Tr([
+                html.Td([
+                    html.Span(style={
+                        "display": "inline-block",
+                        "width": "10px",
+                        "height": "10px",
+                        "borderRadius": "50%",
+                        "backgroundColor": acl_fiber_color(target),
+                        "marginRight": "6px",
+                    }),
+                    target,
+                ]),
+                html.Td(f"{numeric_row_value(row, target):+.2f}"),
+            ])
+            for target in CONVERSION_OUTPUT_COLUMNS
+        ]),
+    ], className="conversion-value-table")
+
+
+def kinematics_from_converted_row(row):
+    return {
+        "flexion": numeric_row_value(row, "flexion_deg"),
+        "adduction": numeric_row_value(row, "adduction_deg"),
+        "internal_rotation": numeric_row_value(row, "internal_rotation_deg"),
+        "anterior_translation": numeric_row_value(row, "anterior_translation_mm"),
+        "proximal_translation": numeric_row_value(row, "proximal_translation_mm"),
+        "lateral_translation": numeric_row_value(row, "lateral_translation_mm"),
+    }
+
+
+def selected_conversion_file(result_data, playback_data):
+    files = (result_data or {}).get("files", [])
+    if not files:
+        return None, 0
+    file_index = int((playback_data or {}).get("file_index", 0))
+    file_index = max(0, min(file_index, len(files) - 1))
+    return files[file_index], file_index
+
+
+def nearest_frame_index(file_info, clicked_frame):
+    rows = file_info.get("output_rows", [])
+    if not rows:
+        return 0
+    frames = [numeric_row_value(row, "frame", index + 1) for index, row in enumerate(rows)]
+    return min(range(len(frames)), key=lambda index: abs(frames[index] - clicked_frame))
 
 
 @lru_cache(maxsize=512)
@@ -639,8 +794,43 @@ def make_data_conversion_tab():
                 ]),
             ], className="conversion-example-table"),
         ], className="conversion-column conversion-upload-column"),
-        html.Section(className="conversion-column conversion-output-column"),
-        html.Section(className="conversion-column conversion-output-column"),
+        html.Section([
+            html.Div(id="conversion-file-selector-wrap", className="conversion-file-selector-wrap"),
+            html.Div([
+                html.Button("Stop", id="conversion-stop", n_clicks=0, className="playback-button"),
+                html.Button("Prev", id="conversion-prev-frame", n_clicks=0, className="playback-button"),
+                html.Button("Play", id="conversion-play", n_clicks=0, className="playback-button playback-primary"),
+                html.Button("Pause", id="conversion-pause", n_clicks=0, className="playback-button"),
+                html.Button("Next", id="conversion-next-frame", n_clicks=0, className="playback-button"),
+                dcc.RadioItems(
+                    id="conversion-speed",
+                    options=PLAYBACK_SPEED_OPTIONS,
+                    value=1.0,
+                    className="playback-speed-selector",
+                    labelClassName="playback-speed-option",
+                    inputClassName="playback-speed-radio",
+                ),
+            ], className="conversion-playback-controls"),
+            html.Div([
+                html.Div([
+                    dcc.Graph(
+                        id="conversion-anatomy-plot",
+                        figure=make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
+                        style={"width": "100%", "height": "52vh", "minHeight": "360px"},
+                        config=INTERACTIVE_3D_GRAPH_CONFIG,
+                    ),
+                ], className="conversion-model-panel"),
+                html.Div([
+                    dcc.Graph(
+                        id="conversion-strain-graph",
+                        figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
+                        style={"width": "100%", "height": "38vh", "minHeight": "280px"},
+                        config=STATIC_GRAPH_CONFIG,
+                    ),
+                    html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
+                ], className="conversion-graph-panel"),
+            ], className="conversion-results-grid"),
+        ], className="conversion-results-area"),
     ], className="data-conversion-layout")
 
 
@@ -1252,7 +1442,16 @@ app.layout = html.Div([
     }),
     dcc.Store(id="conversion-upload-store", data=None),
     dcc.Store(id="conversion-job-store", data=None),
+    dcc.Store(id="conversion-result-store", data=None),
+    dcc.Store(id="conversion-playback-store", data={
+        "file_index": 0,
+        "frame_index": 0,
+        "playing": False,
+        "speed": 1.0,
+        "speed_accumulator": 0.0,
+    }),
     dcc.Interval(id="conversion-interval", interval=150, n_intervals=0, disabled=True),
+    dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=True),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
     html.Div([
@@ -1567,6 +1766,12 @@ def load_conversion_uploads(contents, filenames):
         ])
 
     total_frames = sum(file_info["row_count"] for file_info in parsed_files)
+    if total_frames > MAX_UPLOAD_FRAMES:
+        return None, (
+            f"Upload has {total_frames} total frames, which exceeds the "
+            f"{MAX_UPLOAD_FRAMES} frame limit."
+        )
+
     file_word = "file" if len(parsed_files) == 1 else "files"
     frame_word = "frame" if total_frames == 1 else "frames"
     return {
@@ -1583,6 +1788,7 @@ def load_conversion_uploads(contents, filenames):
     Output("conversion-progress-label", "children"),
     Output("conversion-status", "children"),
     Output("conversion-download", "data"),
+    Output("conversion-result-store", "data"),
     Input("process-kinematics", "n_clicks"),
     Input("cancel-conversion", "n_clicks"),
     Input("conversion-interval", "n_intervals"),
@@ -1593,11 +1799,11 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
     trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
 
     if trigger == "cancel-conversion":
-        return None, True, 0, 1, "", "Processing canceled. No files were generated.", None
+        return None, True, 0, 1, "", "Processing canceled. No files were generated.", None, no_update
 
     if trigger == "process-kinematics":
         if not upload_data or not upload_data.get("files"):
-            return None, True, 0, 1, "", "Upload one or more valid CSV files before processing.", None
+            return None, True, 0, 1, "", "Upload one or more valid CSV files before processing.", None, no_update
 
         job = {
             "files": [
@@ -1614,10 +1820,10 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
             "processed": 0,
             "total": int(upload_data["total_frames"]),
         }
-        return job, False, 0, job["total"], f"0 / {job['total']} frames", "Processing...", None
+        return job, False, 0, job["total"], f"0 / {job['total']} frames", "Processing...", None, no_update
 
     if trigger != "conversion-interval" or not job_data:
-        return job_data, True, 0, 1, "", "", None
+        return job_data, True, 0, 1, "", "", None, no_update
 
     processed_this_tick = 0
     while processed_this_tick < CONVERSION_CHUNK_FRAMES and job_data["file_index"] < len(job_data["files"]):
@@ -1638,17 +1844,190 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
     progress_label = f"{processed} / {total} frames"
 
     if processed >= job_data["total"]:
+        result_data = {
+            "files": [
+                {
+                    "name": file_info["name"],
+                    "headers": file_info["headers"],
+                    "rows": file_info["rows"],
+                    "output_rows": file_info["output_rows"],
+                }
+                for file_info in job_data["files"]
+            ],
+        }
         return (
             None,
             True,
             processed,
             total,
             progress_label,
-            "Processing complete. Downloading converted file output.",
+            "Processing complete! Downloading converted file output.",
             conversion_download_payload(job_data["files"]),
+            result_data,
         )
 
-    return job_data, False, processed, total, progress_label, "Processing...", None
+    return job_data, False, processed, total, progress_label, "Processing...", None, no_update
+
+
+@app.callback(
+    Output("conversion-playback-store", "data"),
+    Output("conversion-playback-interval", "disabled"),
+    Input("conversion-result-store", "data"),
+    Input("conversion-play", "n_clicks"),
+    Input("conversion-pause", "n_clicks"),
+    Input("conversion-stop", "n_clicks"),
+    Input("conversion-prev-frame", "n_clicks"),
+    Input("conversion-next-frame", "n_clicks"),
+    Input("conversion-speed", "value"),
+    Input("conversion-strain-graph", "clickData"),
+    Input("conversion-playback-interval", "n_intervals"),
+    Input({"type": "conversion-file-tab", "index": ALL}, "n_clicks"),
+    State("conversion-playback-store", "data"),
+)
+def update_conversion_playback(
+    result_data,
+    play_clicks,
+    pause_clicks,
+    stop_clicks,
+    prev_clicks,
+    next_clicks,
+    speed,
+    graph_click,
+    interval_ticks,
+    file_clicks,
+    playback_data,
+):
+    trigger = callback_context.triggered[0]["prop_id"] if callback_context.triggered else ""
+    playback = dict(playback_data or {})
+    playback.setdefault("file_index", 0)
+    playback.setdefault("frame_index", 0)
+    playback.setdefault("playing", False)
+    playback.setdefault("speed", 1.0)
+    playback.setdefault("speed_accumulator", 0.0)
+
+    file_info, file_index = selected_conversion_file(result_data, playback)
+    if not file_info:
+        playback.update({"file_index": 0, "frame_index": 0, "playing": False, "speed_accumulator": 0.0})
+        return playback, True
+
+    frame_count = len(file_info.get("output_rows", []))
+    if trigger == "conversion-result-store.data":
+        playback.update({
+            "file_index": 0,
+            "frame_index": 0,
+            "playing": False,
+            "speed": float(speed or 1.0),
+            "speed_accumulator": 0.0,
+        })
+        return playback, True
+
+    if trigger.startswith("{"):
+        try:
+            clicked_id = json.loads(trigger.split(".", maxsplit=1)[0])
+            playback["file_index"] = int(clicked_id.get("index", 0))
+            playback["frame_index"] = 0
+            playback["playing"] = False
+            playback["speed_accumulator"] = 0.0
+        except (ValueError, TypeError, json.JSONDecodeError):
+            pass
+        return playback, True
+
+    file_info, file_index = selected_conversion_file(result_data, playback)
+    frame_count = len(file_info.get("output_rows", [])) if file_info else 0
+    current_frame = clamp_frame_index(file_info, playback.get("frame_index", 0)) if file_info else 0
+    playback["frame_index"] = current_frame
+    playback["speed"] = float(speed or playback.get("speed", 1.0) or 1.0)
+
+    if trigger == "conversion-play.n_clicks":
+        playback["playing"] = True
+    elif trigger == "conversion-pause.n_clicks":
+        playback["playing"] = False
+    elif trigger == "conversion-stop.n_clicks":
+        playback["playing"] = False
+        playback["frame_index"] = 0
+        playback["speed_accumulator"] = 0.0
+    elif trigger == "conversion-prev-frame.n_clicks":
+        playback["playing"] = False
+        playback["frame_index"] = max(0, current_frame - 1)
+        playback["speed_accumulator"] = 0.0
+    elif trigger == "conversion-next-frame.n_clicks":
+        playback["playing"] = False
+        playback["frame_index"] = min(max(frame_count - 1, 0), current_frame + 1)
+        playback["speed_accumulator"] = 0.0
+    elif trigger == "conversion-speed.value":
+        playback["speed"] = float(speed or 1.0)
+    elif trigger == "conversion-strain-graph.clickData" and graph_click:
+        points = graph_click.get("points") or []
+        if points and file_info:
+            playback["playing"] = False
+            playback["frame_index"] = nearest_frame_index(file_info, numeric_row_value(points[0], "x"))
+            playback["speed_accumulator"] = 0.0
+    elif trigger == "conversion-playback-interval.n_intervals" and playback.get("playing"):
+        accumulator = float(playback.get("speed_accumulator", 0.0)) + float(playback.get("speed", 1.0))
+        frame_step = int(accumulator)
+        playback["speed_accumulator"] = accumulator - frame_step
+        if frame_step > 0:
+            next_frame = current_frame + frame_step
+            if next_frame >= frame_count:
+                playback["frame_index"] = max(frame_count - 1, 0)
+                playback["playing"] = False
+                playback["speed_accumulator"] = 0.0
+            else:
+                playback["frame_index"] = next_frame
+
+    return playback, not playback.get("playing", False)
+
+
+@app.callback(
+    Output("conversion-file-selector-wrap", "children"),
+    Output("conversion-anatomy-plot", "figure"),
+    Output("conversion-strain-graph", "figure"),
+    Output("conversion-value-table", "children"),
+    Input("conversion-result-store", "data"),
+    Input("conversion-playback-store", "data"),
+    State("conversion-anatomy-plot", "relayoutData"),
+)
+def update_conversion_visualization(result_data, playback_data, relayout_data):
+    files = (result_data or {}).get("files", [])
+    if not files:
+        return (
+            "",
+            make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
+            make_empty_conversion_figure("Process a CSV file to view strain traces."),
+            "",
+        )
+
+    file_info, file_index = selected_conversion_file(result_data, playback_data)
+    frame_index = clamp_frame_index(file_info, (playback_data or {}).get("frame_index", 0))
+    selected_row = file_info["output_rows"][frame_index]
+    kinematics = kinematics_from_converted_row(selected_row)
+    camera = (relayout_data or {}).get("scene.camera") or ANTERIOR_ANATOMY_CAMERA
+
+    file_buttons = [
+        html.Button(
+            file_data["name"],
+            id={"type": "conversion-file-tab", "index": index},
+            n_clicks=0,
+            className="conversion-file-button conversion-file-button-selected" if index == file_index else "conversion-file-button",
+            title=file_data["name"],
+        )
+        for index, file_data in enumerate(files)
+    ]
+
+    return (
+        file_buttons,
+        make_anatomy_figure(
+            flexion=kinematics["flexion"],
+            adduction=kinematics["adduction"],
+            internal_rotation=kinematics["internal_rotation"],
+            anterior_translation=kinematics["anterior_translation"],
+            lateral_translation=kinematics["lateral_translation"],
+            proximal_translation=kinematics["proximal_translation"],
+            camera=camera,
+        ),
+        make_conversion_strain_figure(file_info, frame_index),
+        make_conversion_value_table(file_info, frame_index),
+    )
 
 
 @app.callback(
