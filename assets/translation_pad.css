@@ -324,12 +324,14 @@
 }
 
 .conversion-graph-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100%;
 }
 
 .conversion-value-table-wrap {
+    width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
 }

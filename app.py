@@ -449,8 +449,22 @@ def make_conversion_strain_figure(file_info, frame_index):
         yref="paper",
         line=dict(color="#111111", width=2),
     )
+    fig.add_annotation(
+        x=current_frame,
+        y=1.04,
+        xref="x",
+        yref="paper",
+        text=f"Frame {int(current_frame)}",
+        showarrow=False,
+        font=dict(size=12, color="#111111"),
+        xanchor="center",
+        yanchor="bottom",
+        bgcolor="rgba(255, 255, 255, 0.85)",
+        bordercolor="rgba(0, 0, 0, 0.18)",
+        borderwidth=1,
+    )
     fig.update_layout(
-        margin=dict(l=42, r=12, t=18, b=40),
+        margin=dict(l=42, r=12, t=42, b=40),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         hovermode=False,
@@ -833,7 +847,13 @@ def make_data_conversion_tab():
                         config=STATIC_GRAPH_CONFIG,
                     ),
                     html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
-                ], className="conversion-graph-panel"),
+                ], className="conversion-graph-panel", style={
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "6px",
+                    "width": "100%",
+                    "minWidth": "0",
+                }),
             ], className="conversion-results-grid"),
         ], className="conversion-results-area"),
     ], className="data-conversion-layout")
@@ -1454,7 +1474,7 @@ app.layout = html.Div([
         "speed": 1.0,
         "speed_accumulator": 0.0,
     }),
-    dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=True),
+    dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=False),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
     html.Div([
@@ -1824,7 +1844,6 @@ def run_conversion(process_clicks, upload_data):
 
 @app.callback(
     Output("conversion-playback-store", "data"),
-    Output("conversion-playback-interval", "disabled"),
     Input("conversion-result-store", "data"),
     Input("conversion-play", "n_clicks"),
     Input("conversion-pause", "n_clicks"),
@@ -1861,7 +1880,7 @@ def update_conversion_playback(
     file_info, file_index = selected_conversion_file(result_data, playback)
     if not file_info:
         playback.update({"file_index": 0, "frame_index": 0, "playing": False, "speed_accumulator": 0.0})
-        return playback, True
+        return playback
 
     frame_count = len(file_info.get("output_rows", []))
     if trigger == "conversion-result-store.data":
@@ -1872,7 +1891,7 @@ def update_conversion_playback(
             "speed": float(playback.get("speed", 1.0) or 1.0),
             "speed_accumulator": 0.0,
         })
-        return playback, True
+        return playback
 
     if trigger.startswith("{"):
         try:
@@ -1882,14 +1901,14 @@ def update_conversion_playback(
                 playback["frame_index"] = 0
                 playback["playing"] = False
                 playback["speed_accumulator"] = 0.0
-                return playback, True
+                return playback
             if clicked_id.get("type") == "conversion-speed-button":
                 playback["speed"] = float(clicked_id.get("speed", 1.0) or 1.0)
                 playback["speed_accumulator"] = 0.0
-                return playback, not playback.get("playing", False)
+                return playback
         except (ValueError, TypeError, json.JSONDecodeError):
             pass
-        return playback, not playback.get("playing", False)
+        return playback
 
     file_info, file_index = selected_conversion_file(result_data, playback)
     frame_count = len(file_info.get("output_rows", [])) if file_info else 0
@@ -1918,7 +1937,9 @@ def update_conversion_playback(
             playback["playing"] = False
             playback["frame_index"] = nearest_frame_index(file_info, numeric_row_value(points[0], "x"))
             playback["speed_accumulator"] = 0.0
-    elif trigger == "conversion-playback-interval.n_intervals" and playback.get("playing"):
+    elif trigger == "conversion-playback-interval.n_intervals":
+        if not playback.get("playing"):
+            return no_update
         accumulator = float(playback.get("speed_accumulator", 0.0)) + float(playback.get("speed", 1.0))
         frame_step = int(accumulator)
         playback["speed_accumulator"] = accumulator - frame_step
@@ -1931,7 +1952,7 @@ def update_conversion_playback(
             else:
                 playback["frame_index"] = next_frame
 
-    return playback, not playback.get("playing", False)
+    return playback
 
 
 @app.callback(
