@@ -1,4 +1,4 @@
-frame,flexion_deg,adduction_deg,internal_rotation_deg,anterior_translation_mm,proximal_translation_mm,lateral_translation_mm
+frame,flex,add,introt,ant,prox,lat
 1,64.065,6.910,6.000,4.442,0.296,1.386
 2,64.145,6.964,6.085,4.484,0.309,1.380
 3,64.224,7.018,6.170,4.526,0.321,1.373

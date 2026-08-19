@@ -156,12 +156,12 @@ SIXDOF_EQUATION_DISPLAY_ORDER = [
 CONVERSION_OUTPUT_COLUMNS = tuple(SIXDOF_EQUATION_DISPLAY_ORDER)
 REQUIRED_UPLOAD_COLUMNS = (
     "frame",
-    "flexion_deg",
-    "adduction_deg",
-    "internal_rotation_deg",
-    "anterior_translation_mm",
-    "proximal_translation_mm",
-    "lateral_translation_mm",
+    "flex",
+    "add",
+    "introt",
+    "ant",
+    "prox",
+    "lat",
 )
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_UPLOAD_FRAMES = 25000
@@ -308,12 +308,12 @@ def parse_uploaded_csv(contents, filename):
 
 
 def converted_row(row):
-    flexion = float(row["flexion_deg"])
-    adduction = float(row["adduction_deg"])
-    internal_rotation = float(row["internal_rotation_deg"])
-    anterior_translation = float(row["anterior_translation_mm"])
-    proximal_translation = float(row["proximal_translation_mm"])
-    lateral_translation = float(row["lateral_translation_mm"])
+    flexion = float(row["flex"])
+    adduction = float(row["add"])
+    internal_rotation = float(row["introt"])
+    anterior_translation = float(row["ant"])
+    proximal_translation = float(row["prox"])
+    lateral_translation = float(row["lat"])
 
     converted = dict(row)
     for target in CONVERSION_OUTPUT_COLUMNS:
@@ -497,12 +497,12 @@ def make_conversion_value_table(file_info, frame_index):
 
 def kinematics_from_converted_row(row):
     return {
-        "flexion": numeric_row_value(row, "flexion_deg"),
-        "adduction": numeric_row_value(row, "adduction_deg"),
-        "internal_rotation": numeric_row_value(row, "internal_rotation_deg"),
-        "anterior_translation": numeric_row_value(row, "anterior_translation_mm"),
-        "proximal_translation": numeric_row_value(row, "proximal_translation_mm"),
-        "lateral_translation": numeric_row_value(row, "lateral_translation_mm"),
+        "flexion": numeric_row_value(row, "flex"),
+        "adduction": numeric_row_value(row, "add"),
+        "internal_rotation": numeric_row_value(row, "introt"),
+        "anterior_translation": numeric_row_value(row, "ant"),
+        "proximal_translation": numeric_row_value(row, "prox"),
+        "lateral_translation": numeric_row_value(row, "lat"),
     }
 
 
@@ -738,12 +738,12 @@ def make_page_header():
 def make_data_conversion_tab():
     upload_columns = [
         ("frame", "Frame number", "Start at 1 and increase by 1 for each sample."),
-        ("flexion_deg", "Knee flexion (deg)", "Positive values indicate flexion."),
-        ("adduction_deg", "Adduction (deg)", "Positive values indicate adduction."),
-        ("internal_rotation_deg", "Internal rotation (deg)", "Positive values indicate internal rotation."),
-        ("anterior_translation_mm", "A/P translation (mm)", "Positive values indicate anterior translation."),
-        ("proximal_translation_mm", "P/D translation (mm)", "Positive values indicate proximal translation."),
-        ("lateral_translation_mm", "M/L translation (mm)", "Positive values indicate lateral translation."),
+        ("flex", "Knee flexion (deg)", "Positive values indicate flexion."),
+        ("add", "Adduction (deg)", "Positive values indicate adduction."),
+        ("introt", "Internal rotation (deg)", "Positive values indicate internal rotation."),
+        ("ant", "A/P translation (mm)", "Positive values indicate anterior translation."),
+        ("prox", "P/D translation (mm)", "Positive values indicate proximal translation."),
+        ("lat", "M/L translation (mm)", "Positive values indicate lateral translation."),
     ]
 
     example_rows = [
