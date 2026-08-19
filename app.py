@@ -369,6 +369,30 @@ def conversion_download_payload(files):
     }
 
 
+def conversion_status_message(job_data, processed_this_tick=0):
+    files = job_data.get("files", [])
+    total_files = len(files)
+    file_index = min(job_data.get("file_index", 0), max(total_files - 1, 0))
+    if not files:
+        return "Preparing conversion..."
+
+    current_file = files[file_index]
+    file_rows = len(current_file.get("rows", []))
+    row_index = min(job_data.get("row_index", 0), file_rows)
+    first_frame = max(row_index - processed_this_tick + 1, 1) if processed_this_tick else min(row_index + 1, file_rows)
+    last_frame = max(row_index, first_frame)
+
+    if processed_this_tick:
+        frame_text = f"frames {first_frame}-{last_frame} of {file_rows}"
+    else:
+        frame_text = f"starting frame {first_frame} of {file_rows}"
+
+    return (
+        f"Processing file {file_index + 1} of {total_files}: "
+        f"{current_file['name']} ({frame_text})."
+    )
+
+
 def numeric_row_value(row, column, default=0):
     try:
         return float(row.get(column, default))
@@ -1822,7 +1846,7 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
             "processed": 0,
             "total": int(upload_data["total_frames"]),
         }
-        return job, False, 0, job["total"], f"0 / {job['total']} frames", "Processing...", None, no_update
+        return job, False, 0, job["total"], f"0 / {job['total']} frames", conversion_status_message(job), None, no_update
 
     if trigger != "conversion-interval" or not job_data:
         return job_data, True, 0, 1, "", "", None, no_update
@@ -1868,7 +1892,7 @@ def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_
             result_data,
         )
 
-    return job_data, False, processed, total, progress_label, "Processing...", None, no_update
+    return job_data, False, processed, total, progress_label, conversion_status_message(job_data, processed_this_tick), None, no_update
 
 
 @app.callback(
