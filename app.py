@@ -432,13 +432,22 @@ def make_page_header():
                 "manipulate knee kinematics and see the resulting ACL strain.",
                 className="app-subtitle",
             ),
-            html.P([
-                html.Strong("Details about this tool can be found and cited as: "),
-                "Kwak, S. T., Myer, G. D., Xerogeanes, J. W., & Riehm, C. D. "
-                "(2026). Translating knee kinematics into ACL strain: Symbolic "
-                "regression-derived equations from a six-degree-of-freedom knee "
-                "model. Manuscript in preparation. Corresponding author: Samuel "
-                "T. Kwak (samuel.t.kwak@emory.edu).",
+            html.Div([
+                html.P(
+                    html.Strong("Details about this tool can be found and cited as:"),
+                    className="app-citation-lead",
+                ),
+                html.P(
+                    "Kwak, S. T., Myer, G. D., Xerogeanes, J. W., & Riehm, C. D. "
+                    "(2026). Translating knee kinematics into ACL strain: Symbolic "
+                    "regression-derived equations from a six-degree-of-freedom knee "
+                    "model. Manuscript in preparation.",
+                    className="app-citation-line",
+                ),
+                html.P(
+                    "Corresponding author: Samuel T. Kwak (samuel.t.kwak@emory.edu).",
+                    className="app-citation-line",
+                ),
             ], className="app-citation"),
         ], className="header-copy"),
         html.Img(
