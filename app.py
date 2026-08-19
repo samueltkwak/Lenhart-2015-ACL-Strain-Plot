@@ -155,7 +155,7 @@ SIXDOF_EQUATION_DISPLAY_ORDER = [
 ]
 CONVERSION_OUTPUT_COLUMNS = tuple(SIXDOF_EQUATION_DISPLAY_ORDER)
 REQUIRED_UPLOAD_COLUMNS = (
-    "frame",
+    "time",
     "flex",
     "add",
     "introt",
@@ -164,7 +164,7 @@ REQUIRED_UPLOAD_COLUMNS = (
     "lat",
 )
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-MAX_UPLOAD_FRAMES = 25000
+MAX_UPLOAD_SAMPLES = 25000
 PLAYBACK_INTERVAL_MS = 100
 PLAYBACK_SPEED_OPTIONS = (
     {"label": "0.25x", "value": 0.25},
@@ -409,14 +409,14 @@ def make_conversion_strain_figure(file_info, frame_index):
         return make_empty_conversion_figure("Processed strain traces will appear here.")
 
     frame_index = clamp_frame_index(file_info, frame_index)
-    frames = [numeric_row_value(row, "frame", index + 1) for index, row in enumerate(output_rows)]
-    current_frame = frames[frame_index]
+    times = [numeric_row_value(row, "time", index) for index, row in enumerate(output_rows)]
+    current_time = times[frame_index]
 
     fig = go.Figure()
     for target in CONVERSION_OUTPUT_COLUMNS:
         is_bundle = target in ("ACLam", "ACLpl")
         fig.add_trace(go.Scatter(
-            x=frames,
+            x=times,
             y=[numeric_row_value(row, target) for row in output_rows],
             mode="lines",
             name=target,
@@ -431,8 +431,8 @@ def make_conversion_strain_figure(file_info, frame_index):
 
     fig.add_shape(
         type="line",
-        x0=min(frames),
-        x1=max(frames),
+        x0=min(times),
+        x1=max(times),
         y0=0,
         y1=0,
         xref="x",
@@ -441,8 +441,8 @@ def make_conversion_strain_figure(file_info, frame_index):
     )
     fig.add_shape(
         type="line",
-        x0=current_frame,
-        x1=current_frame,
+        x0=current_time,
+        x1=current_time,
         y0=0,
         y1=1,
         xref="x",
@@ -450,11 +450,11 @@ def make_conversion_strain_figure(file_info, frame_index):
         line=dict(color="#111111", width=2),
     )
     fig.add_annotation(
-        x=current_frame,
+        x=current_time,
         y=1.04,
         xref="x",
         yref="paper",
-        text=f"Frame {int(current_frame)}",
+        text=f"{current_time:.2f} s",
         showarrow=False,
         font=dict(size=12, color="#111111"),
         xanchor="center",
@@ -469,7 +469,7 @@ def make_conversion_strain_figure(file_info, frame_index):
         plot_bgcolor="#ffffff",
         hovermode=False,
         uirevision=file_info.get("name", "conversion-strain"),
-        xaxis=dict(title="Frame Number", showgrid=True, gridcolor="#eeeeee"),
+        xaxis=dict(title="Time (s)", showgrid=True, gridcolor="#eeeeee"),
         yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee"),
     )
     return fig
@@ -529,12 +529,12 @@ def selected_conversion_file(result_data, playback_data):
     return files[file_index], file_index
 
 
-def nearest_frame_index(file_info, clicked_frame):
+def nearest_time_index(file_info, clicked_time):
     rows = file_info.get("output_rows", [])
     if not rows:
         return 0
-    frames = [numeric_row_value(row, "frame", index + 1) for index, row in enumerate(rows)]
-    return min(range(len(frames)), key=lambda index: abs(frames[index] - clicked_frame))
+    times = [numeric_row_value(row, "time", index) for index, row in enumerate(rows)]
+    return min(range(len(times)), key=lambda index: abs(times[index] - clicked_time))
 
 
 @lru_cache(maxsize=512)
@@ -751,7 +751,7 @@ def make_page_header():
 
 def make_data_conversion_tab():
     upload_columns = [
-        ("frame", "Frame number", "Start at 1 and increase by 1 for each sample."),
+        ("time", "Time (s)", "Time in seconds from the start of the trial."),
         ("flex", "Knee flexion (deg)", "Positive values indicate flexion."),
         ("add", "Adduction (deg)", "Positive values indicate adduction."),
         ("introt", "Internal rotation (deg)", "Positive values indicate internal rotation."),
@@ -761,9 +761,9 @@ def make_data_conversion_tab():
     ]
 
     example_rows = [
-        ("1", "0", "0", "0", "0", "0", "0"),
-        ("2", "5", "2", "-3", "1", "0", "-2"),
-        ("3", "10", "4", "-6", "2", "1", "-4"),
+        ("0.00", "0", "0", "0", "0", "0", "0"),
+        ("0.01", "5", "2", "-3", "1", "0", "-2"),
+        ("0.02", "10", "4", "-6", "2", "1", "-4"),
     ]
 
     return html.Div([
@@ -1788,19 +1788,19 @@ def load_conversion_uploads(contents, filenames):
             html.Ul([html.Li(error) for error in errors]),
         ])
 
-    total_frames = sum(file_info["row_count"] for file_info in parsed_files)
-    if total_frames > MAX_UPLOAD_FRAMES:
+    total_samples = sum(file_info["row_count"] for file_info in parsed_files)
+    if total_samples > MAX_UPLOAD_SAMPLES:
         return None, (
-            f"Upload has {total_frames} total frames, which exceeds the "
-            f"{MAX_UPLOAD_FRAMES} frame limit."
+            f"Upload has {total_samples} total samples, which exceeds the "
+            f"{MAX_UPLOAD_SAMPLES} sample limit."
         )
 
     file_word = "file" if len(parsed_files) == 1 else "files"
-    frame_word = "frame" if total_frames == 1 else "frames"
+    sample_word = "sample" if total_samples == 1 else "samples"
     return {
         "files": parsed_files,
-        "total_frames": total_frames,
-    }, f"{len(parsed_files)} {file_word} ready, {total_frames} total {frame_word}."
+        "total_samples": total_samples,
+    }, f"{len(parsed_files)} {file_word} ready, {total_samples} total {sample_word}."
 
 
 @app.callback(
@@ -1819,11 +1819,11 @@ def run_conversion(process_clicks, upload_data):
         return 0, 1, "", "Upload one or more valid CSV files before processing.", None, no_update
 
     processed_files = []
-    total_frames = int(upload_data["total_frames"])
-    processed_frames = 0
+    total_samples = int(upload_data["total_samples"])
+    processed_samples = 0
     for file_info in upload_data["files"]:
         output_rows = [converted_row(row) for row in file_info["rows"]]
-        processed_frames += len(output_rows)
+        processed_samples += len(output_rows)
         processed_files.append({
             "name": file_info["name"],
             "headers": file_info["headers"],
@@ -1833,9 +1833,9 @@ def run_conversion(process_clicks, upload_data):
 
     result_data = {"files": processed_files}
     return (
-        processed_frames,
-        max(total_frames, 1),
-        f"{processed_frames} / {total_frames} frames",
+        processed_samples,
+        max(total_samples, 1),
+        f"{processed_samples} / {total_samples} samples",
         "Processing complete! Downloading converted file output.",
         conversion_download_payload(processed_files),
         result_data,
@@ -1935,7 +1935,7 @@ def update_conversion_playback(
         points = graph_click.get("points") or []
         if points and file_info:
             playback["playing"] = False
-            playback["frame_index"] = nearest_frame_index(file_info, numeric_row_value(points[0], "x"))
+            playback["frame_index"] = nearest_time_index(file_info, numeric_row_value(points[0], "x"))
             playback["speed_accumulator"] = 0.0
     elif trigger == "conversion-playback-interval.n_intervals":
         if not playback.get("playing"):
