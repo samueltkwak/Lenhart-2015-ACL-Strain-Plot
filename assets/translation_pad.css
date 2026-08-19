@@ -161,6 +161,51 @@
     font-size: 12px;
 }
 
+.conversion-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.conversion-action-button,
+.conversion-cancel-button {
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.conversion-action-button {
+    border: 1px solid #8f1528;
+    background: #b0192e;
+    color: #ffffff;
+}
+
+.conversion-cancel-button {
+    border: 1px solid #8f8f8f;
+    background: #ffffff;
+    color: #2f2f2f;
+}
+
+.conversion-progress {
+    width: 100%;
+    height: 12px;
+    accent-color: #b0192e;
+}
+
+.conversion-progress-label,
+.conversion-status-text {
+    color: #444444;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.conversion-status-text ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+}
+
 .conversion-subhead {
     margin-top: 4px;
     color: #222222;

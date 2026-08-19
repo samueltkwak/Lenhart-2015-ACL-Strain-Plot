@@ -1,9 +1,13 @@
 import json
+import base64
+import csv
+import io
+import zipfile
 from functools import lru_cache
 from pathlib import Path
 
 import dash
-from dash import dcc, html, Input, Output, State, callback_context
+from dash import dcc, html, Input, Output, State, callback_context, no_update
 import numpy as np
 import plotly.graph_objects as go
 
@@ -149,6 +153,17 @@ SIXDOF_EQUATION_DISPLAY_ORDER = [
     "ACLpl5",
     "ACLpl6",
 ]
+CONVERSION_OUTPUT_COLUMNS = tuple(SIXDOF_EQUATION_DISPLAY_ORDER)
+REQUIRED_UPLOAD_COLUMNS = (
+    "frame",
+    "flexion_deg",
+    "adduction_deg",
+    "internal_rotation_deg",
+    "anterior_translation_mm",
+    "proximal_translation_mm",
+    "lateral_translation_mm",
+)
+CONVERSION_CHUNK_FRAMES = 500
 
 ACL_FIBER_NAMES = (
     "ACLam1",
@@ -244,6 +259,102 @@ def calculate_bundle_strain(
         lateral_translation=lateral_translation,
         proximal_translation=proximal_translation,
     )
+
+
+def parse_uploaded_csv(contents, filename):
+    if not contents or "," not in contents:
+        raise ValueError("Missing upload contents.")
+
+    _, encoded = contents.split(",", 1)
+    decoded = base64.b64decode(encoded).decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(decoded))
+    headers = reader.fieldnames or []
+    missing_columns = [column for column in REQUIRED_UPLOAD_COLUMNS if column not in headers]
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {', '.join(missing_columns)}")
+
+    rows = []
+    for row_index, row in enumerate(reader, start=2):
+        if not any((value or "").strip() for value in row.values()):
+            continue
+        cleaned_row = {header: (row.get(header, "") or "").strip() for header in headers}
+        for column in REQUIRED_UPLOAD_COLUMNS:
+            try:
+                float(cleaned_row[column])
+            except ValueError as exc:
+                raise ValueError(f"Invalid numeric value in {column} at CSV row {row_index}.") from exc
+        rows.append(cleaned_row)
+
+    if not rows:
+        raise ValueError("No data rows found.")
+
+    return {
+        "name": filename or "uploaded_trial.csv",
+        "headers": headers,
+        "rows": rows,
+        "row_count": len(rows),
+    }
+
+
+def converted_row(row):
+    flexion = float(row["flexion_deg"])
+    adduction = float(row["adduction_deg"])
+    internal_rotation = float(row["internal_rotation_deg"])
+    anterior_translation = float(row["anterior_translation_mm"])
+    proximal_translation = float(row["proximal_translation_mm"])
+    lateral_translation = float(row["lateral_translation_mm"])
+
+    converted = dict(row)
+    for target in CONVERSION_OUTPUT_COLUMNS:
+        converted[target] = f"{calculate_6dof_strain(
+            target=target,
+            flexion=flexion,
+            adduction=adduction,
+            internal_rotation=internal_rotation,
+            anterior_translation=anterior_translation,
+            lateral_translation=lateral_translation,
+            proximal_translation=proximal_translation,
+        ):.6g}"
+    return converted
+
+
+def output_filename(filename):
+    source_name = Path(filename).name
+    stem = Path(source_name).stem or "trial"
+    return f"{stem}_acl_strain.csv"
+
+
+def csv_text_from_rows(headers, rows):
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=list(headers) + list(CONVERSION_OUTPUT_COLUMNS), lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(rows)
+    return output.getvalue()
+
+
+def conversion_download_payload(files):
+    if len(files) == 1:
+        file_info = files[0]
+        return {
+            "content": csv_text_from_rows(file_info["headers"], file_info["output_rows"]),
+            "filename": output_filename(file_info["name"]),
+            "type": "text/csv",
+        }
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for file_info in files:
+            archive.writestr(
+                output_filename(file_info["name"]),
+                csv_text_from_rows(file_info["headers"], file_info["output_rows"]),
+            )
+
+    return {
+        "content": base64.b64encode(zip_buffer.getvalue()).decode("ascii"),
+        "filename": "acl_strain_outputs.zip",
+        "type": "application/zip",
+        "base64": True,
+    }
 
 
 @lru_cache(maxsize=512)
@@ -492,6 +603,15 @@ def make_data_conversion_tab():
                 accept=".csv,text/csv",
                 className="kinematic-upload-box",
             ),
+            html.Div(id="upload-summary", className="conversion-status-text"),
+            html.Div([
+                html.Button("Process", id="process-kinematics", n_clicks=0, className="conversion-action-button"),
+                html.Button("Cancel", id="cancel-conversion", n_clicks=0, className="conversion-cancel-button"),
+            ], className="conversion-actions"),
+            html.Progress(id="conversion-progress", value=0, max=1, className="conversion-progress"),
+            html.Div(id="conversion-progress-label", className="conversion-progress-label"),
+            html.Div(id="conversion-status", className="conversion-status-text"),
+            dcc.Download(id="conversion-download"),
             html.Div("Required CSV Format", className="conversion-subhead"),
             html.Table([
                 html.Thead(html.Tr([
@@ -1130,6 +1250,9 @@ app.layout = html.Div([
         "anterior": 0,
         "lateral": 0,
     }),
+    dcc.Store(id="conversion-upload-store", data=None),
+    dcc.Store(id="conversion-job-store", data=None),
+    dcc.Interval(id="conversion-interval", interval=150, n_intervals=0, disabled=True),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
     html.Div([
@@ -1408,10 +1531,124 @@ app.layout = html.Div([
     }),
             ],
         ),
-    ], value="visualizer", className="tool-tabs", parent_className="tool-tabs-wrap"),
+    ], value="data-conversion", className="tool-tabs", parent_className="tool-tabs-wrap"),
     make_model_note_section(),
     make_regression_equation_section(),
 ], className="app-root")
+
+
+@app.callback(
+    Output("conversion-upload-store", "data"),
+    Output("upload-summary", "children"),
+    Input("kinematic-upload", "contents"),
+    State("kinematic-upload", "filename"),
+)
+def load_conversion_uploads(contents, filenames):
+    if not contents:
+        return None, "No CSV files selected."
+
+    if isinstance(contents, str):
+        contents = [contents]
+    if isinstance(filenames, str) or filenames is None:
+        filenames = [filenames]
+
+    parsed_files = []
+    errors = []
+    for content, filename in zip(contents, filenames):
+        try:
+            parsed_files.append(parse_uploaded_csv(content, filename))
+        except ValueError as exc:
+            errors.append(f"{filename or 'Uploaded file'}: {exc}")
+
+    if errors:
+        return None, html.Div([
+            html.Div("Upload error:", style={"fontWeight": "700"}),
+            html.Ul([html.Li(error) for error in errors]),
+        ])
+
+    total_frames = sum(file_info["row_count"] for file_info in parsed_files)
+    file_word = "file" if len(parsed_files) == 1 else "files"
+    frame_word = "frame" if total_frames == 1 else "frames"
+    return {
+        "files": parsed_files,
+        "total_frames": total_frames,
+    }, f"{len(parsed_files)} {file_word} ready, {total_frames} total {frame_word}."
+
+
+@app.callback(
+    Output("conversion-job-store", "data"),
+    Output("conversion-interval", "disabled"),
+    Output("conversion-progress", "value"),
+    Output("conversion-progress", "max"),
+    Output("conversion-progress-label", "children"),
+    Output("conversion-status", "children"),
+    Output("conversion-download", "data"),
+    Input("process-kinematics", "n_clicks"),
+    Input("cancel-conversion", "n_clicks"),
+    Input("conversion-interval", "n_intervals"),
+    State("conversion-upload-store", "data"),
+    State("conversion-job-store", "data"),
+)
+def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_data):
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
+
+    if trigger == "cancel-conversion":
+        return None, True, 0, 1, "", "Processing canceled. No files were generated.", None
+
+    if trigger == "process-kinematics":
+        if not upload_data or not upload_data.get("files"):
+            return None, True, 0, 1, "", "Upload one or more valid CSV files before processing.", None
+
+        job = {
+            "files": [
+                {
+                    "name": file_info["name"],
+                    "headers": file_info["headers"],
+                    "rows": file_info["rows"],
+                    "output_rows": [],
+                }
+                for file_info in upload_data["files"]
+            ],
+            "file_index": 0,
+            "row_index": 0,
+            "processed": 0,
+            "total": int(upload_data["total_frames"]),
+        }
+        return job, False, 0, job["total"], f"0 / {job['total']} frames", "Processing...", None
+
+    if trigger != "conversion-interval" or not job_data:
+        return job_data, True, 0, 1, "", "", None
+
+    processed_this_tick = 0
+    while processed_this_tick < CONVERSION_CHUNK_FRAMES and job_data["file_index"] < len(job_data["files"]):
+        current_file = job_data["files"][job_data["file_index"]]
+        if job_data["row_index"] >= len(current_file["rows"]):
+            job_data["file_index"] += 1
+            job_data["row_index"] = 0
+            continue
+
+        row = current_file["rows"][job_data["row_index"]]
+        current_file["output_rows"].append(converted_row(row))
+        job_data["row_index"] += 1
+        job_data["processed"] += 1
+        processed_this_tick += 1
+
+    processed = job_data["processed"]
+    total = max(job_data["total"], 1)
+    progress_label = f"{processed} / {total} frames"
+
+    if processed >= job_data["total"]:
+        return (
+            None,
+            True,
+            processed,
+            total,
+            progress_label,
+            "Processing complete. Downloading converted file output.",
+            conversion_download_payload(job_data["files"]),
+        )
+
+    return job_data, False, processed, total, progress_label, "Processing...", None
 
 
 @app.callback(
