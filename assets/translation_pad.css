@@ -207,6 +207,15 @@
     line-height: 1.35;
 }
 
+.conversion-visualization-status {
+    grid-column: 1 / -1;
+    min-height: 18px;
+    color: #444444;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: center;
+}
+
 .conversion-status-text ul {
     margin: 4px 0 0;
     padding-left: 18px;
@@ -321,7 +330,7 @@
 .conversion-results-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
+    gap: 6px 10px;
     align-items: start;
 }
 
@@ -335,6 +344,18 @@
     flex-direction: column !important;
     gap: 6px !important;
     width: 100%;
+}
+
+.conversion-timeline-scrubber,
+.conversion-timeline-scrubber .js-plotly-plot,
+.conversion-timeline-scrubber .plot-container {
+    cursor: ew-resize;
+}
+
+.conversion-timeline-scrubber.scrubbing,
+.conversion-timeline-scrubber.scrubbing .js-plotly-plot,
+.conversion-timeline-scrubber.scrubbing .plot-container {
+    cursor: grabbing;
 }
 
 .conversion-value-table-wrap {

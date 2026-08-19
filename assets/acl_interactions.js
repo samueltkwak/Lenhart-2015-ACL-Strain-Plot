@@ -368,9 +368,101 @@
         });
     }
 
+    function timeFromTimelinePointer(event, graph) {
+        var layout = graph && graph._fullLayout;
+        var xaxis = layout && layout.xaxis;
+        var size = layout && layout._size;
+
+        if (!xaxis || !size) {
+            return null;
+        }
+
+        var rect = graph.getBoundingClientRect();
+        var plotX = event.clientX - rect.left - size.l;
+        plotX = Math.min(size.w, Math.max(0, plotX));
+
+        if (typeof xaxis.p2d === "function") {
+            return xaxis.p2d(plotX);
+        }
+
+        var range = xaxis.range || [0, 1];
+        return range[0] + (plotX / Math.max(size.w, 1)) * (range[1] - range[0]);
+    }
+
+    function setupConversionTimelineScrubber() {
+        var container = document.getElementById("conversion-strain-graph");
+        var input = document.getElementById("conversion-scrub-time");
+
+        if (
+            !container ||
+            !input ||
+            !container.querySelector(".js-plotly-plot") ||
+            container.dataset.scrubberInitialized === "true"
+        ) {
+            return;
+        }
+
+        container.dataset.scrubberInitialized = "true";
+        container.classList.add("conversion-timeline-scrubber");
+
+        var dragging = false;
+        var lastPublished = null;
+
+        function publish(event) {
+            var graph = container.querySelector(".js-plotly-plot");
+            var timeValue = timeFromTimelinePointer(event, graph);
+            if (timeValue === null || Number.isNaN(timeValue)) {
+                return;
+            }
+
+            var rounded = Number(timeValue).toFixed(4);
+            if (rounded === lastPublished) {
+                return;
+            }
+
+            lastPublished = rounded;
+            setInputValue(input, rounded);
+        }
+
+        container.addEventListener("pointerdown", function (event) {
+            if (event.button !== undefined && event.button !== 0) {
+                return;
+            }
+
+            event.preventDefault();
+            dragging = true;
+            container.classList.add("scrubbing");
+            if (container.setPointerCapture && event.pointerId !== undefined) {
+                try {
+                    container.setPointerCapture(event.pointerId);
+                } catch (error) {
+                    // The pointer can be released by the browser before capture succeeds.
+                }
+            }
+            publish(event);
+        }, true);
+
+        container.addEventListener("pointermove", function (event) {
+            if (!dragging) {
+                return;
+            }
+            event.preventDefault();
+            publish(event);
+        }, true);
+
+        function stopScrubbing() {
+            dragging = false;
+            container.classList.remove("scrubbing");
+        }
+
+        container.addEventListener("pointerup", stopScrubbing);
+        container.addEventListener("pointercancel", stopScrubbing);
+    }
+
     function setupInteractions() {
         setupKinematicPads();
         setupPlotPinchZooms();
+        setupConversionTimelineScrubber();
     }
 
     document.addEventListener("DOMContentLoaded", setupInteractions);
