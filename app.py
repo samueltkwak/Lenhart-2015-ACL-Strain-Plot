@@ -797,11 +797,13 @@ def make_data_conversion_tab():
         html.Section([
             html.Div(id="conversion-file-selector-wrap", className="conversion-file-selector-wrap"),
             html.Div([
-                html.Button("Stop", id="conversion-stop", n_clicks=0, className="playback-button"),
-                html.Button("Prev", id="conversion-prev-frame", n_clicks=0, className="playback-button"),
-                html.Button("Play", id="conversion-play", n_clicks=0, className="playback-button playback-primary"),
-                html.Button("Pause", id="conversion-pause", n_clicks=0, className="playback-button"),
-                html.Button("Next", id="conversion-next-frame", n_clicks=0, className="playback-button"),
+                html.Div([
+                    html.Button([html.Span("|<", className="playback-icon"), html.Span("Stop", className="playback-label")], id="conversion-stop", n_clicks=0, className="playback-button"),
+                    html.Button([html.Span("<", className="playback-icon"), html.Span("Prev", className="playback-label")], id="conversion-prev-frame", n_clicks=0, className="playback-button"),
+                    html.Button([html.Span(">", className="playback-icon"), html.Span("Play", className="playback-label")], id="conversion-play", n_clicks=0, className="playback-button playback-primary"),
+                    html.Button([html.Span("||", className="playback-icon"), html.Span("Pause", className="playback-label")], id="conversion-pause", n_clicks=0, className="playback-button"),
+                    html.Button([html.Span(">|", className="playback-icon"), html.Span("Next", className="playback-label")], id="conversion-next-frame", n_clicks=0, className="playback-button"),
+                ], className="playback-transport-buttons"),
                 dcc.RadioItems(
                     id="conversion-speed",
                     options=PLAYBACK_SPEED_OPTIONS,
