@@ -458,6 +458,72 @@ def make_page_header():
     ], className="app-header")
 
 
+def make_data_conversion_tab():
+    upload_columns = [
+        ("frame", "Frame number", "Start at 1 and increase by 1 for each sample."),
+        ("flexion_deg", "Knee flexion (deg)", "Positive values indicate flexion."),
+        ("adduction_deg", "Adduction (deg)", "Positive values indicate adduction."),
+        ("internal_rotation_deg", "Internal rotation (deg)", "Positive values indicate internal rotation."),
+        ("anterior_translation_mm", "A/P translation (mm)", "Positive values indicate anterior translation."),
+        ("proximal_translation_mm", "P/D translation (mm)", "Positive values indicate proximal translation."),
+        ("lateral_translation_mm", "M/L translation (mm)", "Positive values indicate lateral translation."),
+    ]
+
+    example_rows = [
+        ("1", "0", "0", "0", "0", "0", "0"),
+        ("2", "5", "2", "-3", "1", "0", "-2"),
+        ("3", "10", "4", "-6", "2", "1", "-4"),
+    ]
+
+    return html.Div([
+        html.Section([
+            html.P(
+                "Please upload one or more 6DOF knee kinematic trial files as CSV files "
+                "using the column format below.",
+                className="conversion-instructions",
+            ),
+            dcc.Upload(
+                id="kinematic-upload",
+                children=html.Div([
+                    html.Div("Drag and drop CSV files here", className="upload-primary-text"),
+                    html.Div("or click to select files", className="upload-secondary-text"),
+                ]),
+                multiple=True,
+                accept=".csv,text/csv",
+                className="kinematic-upload-box",
+            ),
+            html.Div("Required CSV Format", className="conversion-subhead"),
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th("Column"),
+                    html.Th("Meaning"),
+                    html.Th("Convention"),
+                ])),
+                html.Tbody([
+                    html.Tr([
+                        html.Td(html.Code(column_name)),
+                        html.Td(meaning),
+                        html.Td(convention),
+                    ])
+                    for column_name, meaning, convention in upload_columns
+                ]),
+            ], className="conversion-format-table"),
+            html.Div("Example", className="conversion-subhead"),
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th(column_name) for column_name, _, _ in upload_columns
+                ])),
+                html.Tbody([
+                    html.Tr([html.Td(value) for value in row])
+                    for row in example_rows
+                ]),
+            ], className="conversion-example-table"),
+        ], className="conversion-column conversion-upload-column"),
+        html.Section(className="conversion-column conversion-output-column"),
+        html.Section(className="conversion-column conversion-output-column"),
+    ], className="data-conversion-layout")
+
+
 def make_regression_equation_section():
     return html.Div([
         html.Div("Regression Equations Used", style={
@@ -1076,7 +1142,7 @@ app.layout = html.Div([
     ], className="visual-loading-overlay"),
     dcc.Tabs([
         dcc.Tab(label="Data Conversion", value="data-conversion", children=[
-            html.Div(className="data-conversion-placeholder"),
+            make_data_conversion_tab(),
         ], className="tool-tab", selected_className="tool-tab-selected"),
         dcc.Tab(
             label="Generic Strain Visualizer",
