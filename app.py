@@ -432,6 +432,14 @@ def make_page_header():
                 "manipulate knee kinematics and see the resulting ACL strain.",
                 className="app-subtitle",
             ),
+            html.P([
+                html.Strong("Details about this tool can be found and cited as: "),
+                "Kwak, S. T., Myer, G. D., Xerogeanes, J. W., & Riehm, C. D. "
+                "(2026). Translating knee kinematics into ACL strain: Symbolic "
+                "regression-derived equations from a six-degree-of-freedom knee "
+                "model. Manuscript in preparation. Corresponding author: Samuel "
+                "T. Kwak (samuel.t.kwak@emory.edu).",
+            ], className="app-citation"),
         ], className="header-copy"),
         html.Img(
             src=app.get_asset_url("ehpi_logo_black.png"),
@@ -1057,29 +1065,36 @@ app.layout = html.Div([
             children=[html.Div(id="model-loading-message", className="visual-loading-target")],
         ),
     ], className="visual-loading-overlay"),
-    html.Div([
-        html.Div([
-            html.Label("Surface X Axis", style={"fontSize": "13px", "fontWeight": "600"}),
-            dcc.Dropdown(
-                id="surface-x-axis",
-                options=SURFACE_DOF_DROPDOWN_OPTIONS,
-                value="adduction",
-                clearable=False,
-                searchable=False,
-                style={"fontSize": "13px"},
-            ),
-        ], style={"width": "220px"}),
-        html.Div([
-            html.Label("Surface Y Axis", style={"fontSize": "13px", "fontWeight": "600"}),
-            dcc.Dropdown(
-                id="surface-y-axis",
-                options=SURFACE_DOF_DROPDOWN_OPTIONS,
-                value="internal_rotation",
-                clearable=False,
-                searchable=False,
-                style={"fontSize": "13px"},
-            ),
-        ], style={"width": "220px"}),
+    dcc.Tabs([
+        dcc.Tab(
+            label="Generic Strain Visualizer",
+            value="visualizer",
+            className="tool-tab",
+            selected_className="tool-tab-selected",
+            children=[
+            html.Div([
+                html.Div([
+                    html.Label("Surface X Axis", style={"fontSize": "13px", "fontWeight": "600"}),
+                    dcc.Dropdown(
+                        id="surface-x-axis",
+                        options=SURFACE_DOF_DROPDOWN_OPTIONS,
+                        value="adduction",
+                        clearable=False,
+                        searchable=False,
+                        style={"fontSize": "13px"},
+                    ),
+                ], style={"width": "220px"}),
+                html.Div([
+                    html.Label("Surface Y Axis", style={"fontSize": "13px", "fontWeight": "600"}),
+                    dcc.Dropdown(
+                        id="surface-y-axis",
+                        options=SURFACE_DOF_DROPDOWN_OPTIONS,
+                        value="internal_rotation",
+                        clearable=False,
+                        searchable=False,
+                        style={"fontSize": "13px"},
+                    ),
+                ], style={"width": "220px"}),
     ], className="surface-axis-controls", style={
         "display": "flex",
         "gap": "12px",
@@ -1306,6 +1321,12 @@ app.layout = html.Div([
         "margin": "auto",
         "flexWrap": "wrap",
     }),
+            ],
+        ),
+        dcc.Tab(label="Data Conversion", value="data-conversion", children=[
+            html.Div(className="data-conversion-placeholder"),
+        ], className="tool-tab", selected_className="tool-tab-selected"),
+    ], value="visualizer", className="tool-tabs", parent_className="tool-tabs-wrap"),
     make_model_note_section(),
     make_regression_equation_section(),
 ], className="app-root")

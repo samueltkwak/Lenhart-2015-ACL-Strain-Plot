@@ -1,12 +1,13 @@
 .app-header {
     display: grid;
-    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) minmax(150px, 230px);
+    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) minmax(210px, 320px);
     grid-template-areas: "left copy right";
-    align-items: start;
+    align-items: center;
     gap: 18px;
-    max-width: 1280px;
+    width: 100%;
+    max-width: none;
     margin: 0 auto 14px;
-    padding: 12px 18px 4px;
+    padding: 12px 10px 4px;
     box-sizing: border-box;
 }
 
@@ -26,15 +27,15 @@
 .header-logo-left {
     grid-area: left;
     justify-self: start;
-    width: 178px;
-    max-height: 136px;
+    width: 190px;
+    max-height: 146px;
 }
 
 .header-logo-right {
     grid-area: right;
     justify-self: end;
-    width: 230px;
-    max-height: 70px;
+    width: 300px;
+    max-height: 90px;
 }
 
 .app-title {
@@ -52,6 +53,42 @@
     color: #3f3f3f;
     font-size: 14.5px;
     line-height: 1.45;
+}
+
+.app-citation {
+    max-width: 880px;
+    margin: 8px auto 0;
+    color: #303030;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.tool-tabs-wrap {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.tool-tabs {
+    max-width: 100%;
+}
+
+.tool-tab {
+    padding: 8px 16px !important;
+    border: 0 !important;
+    border-bottom: 2px solid #d8d8d8 !important;
+    background: #ffffff !important;
+    color: #444444 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+.tool-tab-selected {
+    border-bottom: 3px solid #b0192e !important;
+    color: #1f1f1f !important;
+}
+
+.data-conversion-placeholder {
+    min-height: 120px;
 }
 
 .translation-pad-wrap {
@@ -320,7 +357,7 @@
 
 @media (max-width: 1100px) {
     .app-header {
-        grid-template-columns: minmax(120px, 170px) minmax(0, 1fr) minmax(120px, 180px);
+        grid-template-columns: minmax(130px, 180px) minmax(0, 1fr) minmax(170px, 240px);
         gap: 12px;
     }
 
@@ -330,8 +367,8 @@
     }
 
     .header-logo-right {
-        width: 178px;
-        max-height: 56px;
+        width: 230px;
+        max-height: 72px;
     }
 
     .app-title {
@@ -340,6 +377,10 @@
 
     .app-subtitle {
         font-size: 13.5px;
+    }
+
+    .app-citation {
+        font-size: 12.5px;
     }
 
     .visual-dashboard {
@@ -419,6 +460,15 @@
 
     .app-subtitle {
         font-size: 13.5px;
+    }
+
+    .app-citation {
+        font-size: 12.5px;
+    }
+
+    .tool-tab {
+        padding: 8px 10px !important;
+        font-size: 13px !important;
     }
 
     .app-root {
@@ -533,6 +583,11 @@
 
     .app-subtitle {
         font-size: 13px;
+        text-align: left;
+    }
+
+    .app-citation {
+        font-size: 12px;
         text-align: left;
     }
 
