@@ -187,6 +187,13 @@
     color: #ffffff;
 }
 
+.conversion-action-button:disabled {
+    border-color: #cfcfcf;
+    background: #e7e7e7;
+    color: #8a8a8a;
+    cursor: not-allowed;
+}
+
 .conversion-progress {
     width: 100%;
     height: 12px;

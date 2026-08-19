@@ -1,6 +1,7 @@
 import json
 import base64
 import csv
+import hashlib
 import io
 import zipfile
 from functools import lru_cache
@@ -785,7 +786,8 @@ def make_data_conversion_tab():
             ),
             html.Div(id="upload-summary", className="conversion-status-text"),
             html.Div([
-                html.Button("Process", id="process-kinematics", n_clicks=0, className="conversion-action-button"),
+                html.Button("Process", id="process-kinematics", n_clicks=0, disabled=True, className="conversion-action-button"),
+                html.Button("Download", id="download-conversion-output", n_clicks=0, disabled=True, className="conversion-action-button"),
             ], className="conversion-actions"),
             html.Progress(id="conversion-progress", value=0, max=1, className="conversion-progress"),
             html.Div(id="conversion-progress-label", className="conversion-progress-label"),
@@ -1800,6 +1802,7 @@ def load_conversion_uploads(contents, filenames):
     return {
         "files": parsed_files,
         "total_samples": total_samples,
+        "upload_id": hashlib.sha1("|".join(contents).encode("utf-8")).hexdigest(),
     }, f"{len(parsed_files)} {file_word} ready, {total_samples} total {sample_word}."
 
 
@@ -1808,7 +1811,6 @@ def load_conversion_uploads(contents, filenames):
     Output("conversion-progress", "max"),
     Output("conversion-progress-label", "children"),
     Output("conversion-status", "children"),
-    Output("conversion-download", "data"),
     Output("conversion-result-store", "data"),
     Input("process-kinematics", "n_clicks"),
     State("conversion-upload-store", "data"),
@@ -1816,7 +1818,7 @@ def load_conversion_uploads(contents, filenames):
 )
 def run_conversion(process_clicks, upload_data):
     if not upload_data or not upload_data.get("files"):
-        return 0, 1, "", "Upload one or more valid CSV files before processing.", None, no_update
+        return 0, 1, "", "Upload one or more valid CSV files before processing.", no_update
 
     processed_files = []
     total_samples = int(upload_data["total_samples"])
@@ -1831,15 +1833,46 @@ def run_conversion(process_clicks, upload_data):
             "output_rows": output_rows,
         })
 
-    result_data = {"files": processed_files}
+    result_data = {
+        "files": processed_files,
+        "upload_id": upload_data.get("upload_id"),
+    }
     return (
         processed_samples,
         max(total_samples, 1),
         f"{processed_samples} / {total_samples} samples",
-        "Processing complete! Downloading converted file output.",
-        conversion_download_payload(processed_files),
+        "Processing complete! Results are ready to view and download.",
         result_data,
     )
+
+
+@app.callback(
+    Output("process-kinematics", "disabled"),
+    Output("download-conversion-output", "disabled"),
+    Input("conversion-upload-store", "data"),
+    Input("conversion-result-store", "data"),
+)
+def update_conversion_action_buttons(upload_data, result_data):
+    upload_id = (upload_data or {}).get("upload_id")
+    result_id = (result_data or {}).get("upload_id")
+    has_upload = bool(upload_data and upload_data.get("files"))
+    has_result = bool(result_data and result_data.get("files"))
+    result_matches_upload = has_result and (not has_upload or upload_id == result_id)
+    process_disabled = not has_upload or result_matches_upload
+    download_disabled = not result_matches_upload
+    return process_disabled, download_disabled
+
+
+@app.callback(
+    Output("conversion-download", "data"),
+    Input("download-conversion-output", "n_clicks"),
+    State("conversion-result-store", "data"),
+    prevent_initial_call=True,
+)
+def download_conversion_output(download_clicks, result_data):
+    if not download_clicks or not result_data or not result_data.get("files"):
+        return no_update
+    return conversion_download_payload(result_data["files"])
 
 
 @app.callback(
