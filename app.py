@@ -163,7 +163,6 @@ REQUIRED_UPLOAD_COLUMNS = (
     "proximal_translation_mm",
     "lateral_translation_mm",
 )
-CONVERSION_CHUNK_FRAMES = 500
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_UPLOAD_FRAMES = 25000
 PLAYBACK_INTERVAL_MS = 100
@@ -369,30 +368,6 @@ def conversion_download_payload(files):
     }
 
 
-def conversion_status_message(job_data, processed_this_tick=0):
-    files = job_data.get("files", [])
-    total_files = len(files)
-    file_index = min(job_data.get("file_index", 0), max(total_files - 1, 0))
-    if not files:
-        return "Preparing conversion..."
-
-    current_file = files[file_index]
-    file_rows = len(current_file.get("rows", []))
-    row_index = min(job_data.get("row_index", 0), file_rows)
-    first_frame = max(row_index - processed_this_tick + 1, 1) if processed_this_tick else min(row_index + 1, file_rows)
-    last_frame = max(row_index, first_frame)
-
-    if processed_this_tick:
-        frame_text = f"frames {first_frame}-{last_frame} of {file_rows}"
-    else:
-        frame_text = f"starting frame {first_frame} of {file_rows}"
-
-    return (
-        f"Processing file {file_index + 1} of {total_files}: "
-        f"{current_file['name']} ({frame_text})."
-    )
-
-
 def numeric_row_value(row, column, default=0):
     try:
         return float(row.get(column, default))
@@ -450,10 +425,20 @@ def make_conversion_strain_figure(file_info, frame_index):
                 width=3.5 if is_bundle else 1.2,
             ),
             opacity=1.0 if is_bundle else 0.32,
-            hovertemplate=f"{target}<br>Frame: %{{x}}<br>Strain: %{{y:.2f}}%<extra></extra>",
+            hoverinfo="skip",
             showlegend=False,
         ))
 
+    fig.add_shape(
+        type="line",
+        x0=min(frames),
+        x1=max(frames),
+        y0=0,
+        y1=0,
+        xref="x",
+        yref="y",
+        line=dict(color="rgba(0, 0, 0, 0.72)", width=3),
+    )
     fig.add_shape(
         type="line",
         x0=current_frame,
@@ -468,7 +453,7 @@ def make_conversion_strain_figure(file_info, frame_index):
         margin=dict(l=42, r=12, t=18, b=40),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        hovermode="x unified",
+        hovermode=False,
         uirevision=file_info.get("name", "conversion-strain"),
         xaxis=dict(title="Frame Number", showgrid=True, gridcolor="#eeeeee"),
         yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee"),
@@ -484,26 +469,28 @@ def make_conversion_value_table(file_info, frame_index):
     frame_index = clamp_frame_index(file_info, frame_index)
     row = output_rows[frame_index]
     return html.Table([
-        html.Thead(html.Tr([
-            html.Th("Fiber/Bundle"),
-            html.Th("Strain (%)"),
-        ])),
         html.Tbody([
             html.Tr([
-                html.Td([
-                    html.Span(style={
-                        "display": "inline-block",
-                        "width": "10px",
-                        "height": "10px",
-                        "borderRadius": "50%",
-                        "backgroundColor": acl_fiber_color(target),
-                        "marginRight": "6px",
-                    }),
-                    target,
-                ]),
-                html.Td(f"{numeric_row_value(row, target):+.2f}"),
-            ])
-            for target in CONVERSION_OUTPUT_COLUMNS
+                html.Th("Fiber/Bundle"),
+                *[
+                    html.Th([
+                        html.Span(style={
+                            "display": "inline-block",
+                            "width": "10px",
+                            "height": "10px",
+                            "borderRadius": "50%",
+                            "backgroundColor": acl_fiber_color(target),
+                            "marginRight": "5px",
+                        }),
+                        target,
+                    ])
+                    for target in CONVERSION_OUTPUT_COLUMNS
+                ],
+            ]),
+            html.Tr([
+                html.Th("Strain (%)"),
+                *[html.Td(f"{numeric_row_value(row, target):+.2f}") for target in CONVERSION_OUTPUT_COLUMNS],
+            ]),
         ]),
     ], className="conversion-value-table")
 
@@ -785,7 +772,6 @@ def make_data_conversion_tab():
             html.Div(id="upload-summary", className="conversion-status-text"),
             html.Div([
                 html.Button("Process", id="process-kinematics", n_clicks=0, className="conversion-action-button"),
-                html.Button("Cancel", id="cancel-conversion", n_clicks=0, className="conversion-cancel-button"),
             ], className="conversion-actions"),
             html.Progress(id="conversion-progress", value=0, max=1, className="conversion-progress"),
             html.Div(id="conversion-progress-label", className="conversion-progress-label"),
@@ -1460,7 +1446,6 @@ app.layout = html.Div([
         "lateral": 0,
     }),
     dcc.Store(id="conversion-upload-store", data=None),
-    dcc.Store(id="conversion-job-store", data=None),
     dcc.Store(id="conversion-result-store", data=None),
     dcc.Store(id="conversion-playback-store", data={
         "file_index": 0,
@@ -1469,7 +1454,6 @@ app.layout = html.Div([
         "speed": 1.0,
         "speed_accumulator": 0.0,
     }),
-    dcc.Interval(id="conversion-interval", interval=150, n_intervals=0, disabled=True),
     dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=True),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
@@ -1800,8 +1784,6 @@ def load_conversion_uploads(contents, filenames):
 
 
 @app.callback(
-    Output("conversion-job-store", "data"),
-    Output("conversion-interval", "disabled"),
     Output("conversion-progress", "value"),
     Output("conversion-progress", "max"),
     Output("conversion-progress-label", "children"),
@@ -1809,83 +1791,35 @@ def load_conversion_uploads(contents, filenames):
     Output("conversion-download", "data"),
     Output("conversion-result-store", "data"),
     Input("process-kinematics", "n_clicks"),
-    Input("cancel-conversion", "n_clicks"),
-    Input("conversion-interval", "n_intervals"),
     State("conversion-upload-store", "data"),
-    State("conversion-job-store", "data"),
+    prevent_initial_call=True,
 )
-def run_conversion(process_clicks, cancel_clicks, n_intervals, upload_data, job_data):
-    trigger = callback_context.triggered[0]["prop_id"].split(".")[0] if callback_context.triggered else ""
+def run_conversion(process_clicks, upload_data):
+    if not upload_data or not upload_data.get("files"):
+        return 0, 1, "", "Upload one or more valid CSV files before processing.", None, no_update
 
-    if trigger == "cancel-conversion":
-        return None, True, 0, 1, "", "Processing canceled. No files were generated.", None, no_update
+    processed_files = []
+    total_frames = int(upload_data["total_frames"])
+    processed_frames = 0
+    for file_info in upload_data["files"]:
+        output_rows = [converted_row(row) for row in file_info["rows"]]
+        processed_frames += len(output_rows)
+        processed_files.append({
+            "name": file_info["name"],
+            "headers": file_info["headers"],
+            "rows": file_info["rows"],
+            "output_rows": output_rows,
+        })
 
-    if trigger == "process-kinematics":
-        if not upload_data or not upload_data.get("files"):
-            return None, True, 0, 1, "", "Upload one or more valid CSV files before processing.", None, no_update
-
-        job = {
-            "files": [
-                {
-                    "name": file_info["name"],
-                    "headers": file_info["headers"],
-                    "rows": file_info["rows"],
-                    "output_rows": [],
-                }
-                for file_info in upload_data["files"]
-            ],
-            "file_index": 0,
-            "row_index": 0,
-            "processed": 0,
-            "total": int(upload_data["total_frames"]),
-        }
-        return job, False, 0, job["total"], f"0 / {job['total']} frames", conversion_status_message(job), None, no_update
-
-    if trigger != "conversion-interval" or not job_data:
-        return job_data, True, 0, 1, "", "", None, no_update
-
-    processed_this_tick = 0
-    while processed_this_tick < CONVERSION_CHUNK_FRAMES and job_data["file_index"] < len(job_data["files"]):
-        current_file = job_data["files"][job_data["file_index"]]
-        if job_data["row_index"] >= len(current_file["rows"]):
-            job_data["file_index"] += 1
-            job_data["row_index"] = 0
-            continue
-
-        row = current_file["rows"][job_data["row_index"]]
-        current_file["output_rows"].append(converted_row(row))
-        job_data["row_index"] += 1
-        job_data["processed"] += 1
-        processed_this_tick += 1
-
-    processed = job_data["processed"]
-    total = max(job_data["total"], 1)
-    progress_label = f"{processed} / {total} frames"
-
-    if processed >= job_data["total"]:
-        result_data = {
-            "files": [
-                {
-                    "name": file_info["name"],
-                    "headers": file_info["headers"],
-                    "rows": file_info["rows"],
-                    "output_rows": file_info["output_rows"],
-                }
-                for file_info in job_data["files"]
-            ],
-        }
-        return (
-            None,
-            True,
-            processed,
-            total,
-            progress_label,
-            "Processing complete! Downloading converted file output.",
-            conversion_download_payload(job_data["files"]),
-            result_data,
-        )
-
-    return job_data, False, processed, total, progress_label, conversion_status_message(job_data, processed_this_tick), None, no_update
+    result_data = {"files": processed_files}
+    return (
+        processed_frames,
+        max(total_frames, 1),
+        f"{processed_frames} / {total_frames} frames",
+        "Processing complete! Downloading converted file output.",
+        conversion_download_payload(processed_files),
+        result_data,
+    )
 
 
 @app.callback(
