@@ -413,6 +413,34 @@ def make_surface_legend(z_range):
     })
 
 
+def make_page_header():
+    return html.Header([
+        html.Img(
+            src=app.get_asset_url("sparc_logo.png"),
+            alt="Emory Healthcare Sports Performance and Research Center",
+            className="header-logo header-logo-left",
+        ),
+        html.Div([
+            html.H1("ACL Strain Tool", className="app-title"),
+            html.P(
+                "Developed by the Emory Sports Performance and Research Center "
+                "(SPARC), this tool helps derive and visualize ACL strain from "
+                "six-degree-of-freedom knee kinematics. It is being built around "
+                "two components: a data-conversion workflow where users can upload "
+                "knee kinematic data and convert it to estimated ACL strain with "
+                "summary graphics, and a generic strain visualizer where users can "
+                "manipulate knee kinematics and see the resulting ACL strain.",
+                className="app-subtitle",
+            ),
+        ], className="header-copy"),
+        html.Img(
+            src=app.get_asset_url("ehpi_logo_black.png"),
+            alt="Emory Healthcare Performance Institute",
+            className="header-logo header-logo-right",
+        ),
+    ], className="app-header")
+
+
 def make_regression_equation_section():
     return html.Div([
         html.Div("Regression Equations Used", style={
@@ -1007,14 +1035,11 @@ def make_anatomy_figure(
     return fig
 
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, title="ACL Strain Tool")
 server = app.server
 
 app.layout = html.Div([
-    html.H2(
-        "ACL Strain Visualizer",
-        style={"fontSize": "24px", "marginBottom": "10px", "textAlign": "center"},
-    ),
+    make_page_header(),
     dcc.Store(id="camera-store", data=None),
     dcc.Store(id="anatomy-camera-store", data=None),
     dcc.Store(id="surface-selection-store", data=SURFACE_SELECTION_DEFAULT),

@@ -1,3 +1,59 @@
+.app-header {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) minmax(150px, 230px);
+    grid-template-areas: "left copy right";
+    align-items: start;
+    gap: 18px;
+    max-width: 1280px;
+    margin: 0 auto 14px;
+    padding: 12px 18px 4px;
+    box-sizing: border-box;
+}
+
+.header-copy {
+    grid-area: copy;
+    text-align: center;
+    min-width: 0;
+}
+
+.header-logo {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.header-logo-left {
+    grid-area: left;
+    justify-self: start;
+    width: 178px;
+    max-height: 136px;
+}
+
+.header-logo-right {
+    grid-area: right;
+    justify-self: end;
+    width: 230px;
+    max-height: 70px;
+}
+
+.app-title {
+    margin: 0 0 8px;
+    color: #1f1f1f;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: 0;
+}
+
+.app-subtitle {
+    max-width: 880px;
+    margin: 0 auto;
+    color: #3f3f3f;
+    font-size: 14.5px;
+    line-height: 1.45;
+}
+
 .translation-pad-wrap {
     position: relative;
     width: 348px;
@@ -263,6 +319,29 @@
 }
 
 @media (max-width: 1100px) {
+    .app-header {
+        grid-template-columns: minmax(120px, 170px) minmax(0, 1fr) minmax(120px, 180px);
+        gap: 12px;
+    }
+
+    .header-logo-left {
+        width: 142px;
+        max-height: 110px;
+    }
+
+    .header-logo-right {
+        width: 178px;
+        max-height: 56px;
+    }
+
+    .app-title {
+        font-size: 34px;
+    }
+
+    .app-subtitle {
+        font-size: 13.5px;
+    }
+
     .visual-dashboard {
         flex-direction: column !important;
         gap: 10px !important;
@@ -313,6 +392,35 @@
 }
 
 @media (max-width: 760px) {
+    .app-header {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "left right"
+            "copy copy";
+        align-items: center;
+        gap: 10px 16px;
+        padding: 10px 0 2px;
+    }
+
+    .header-logo-left {
+        width: 128px;
+        max-height: 100px;
+    }
+
+    .header-logo-right {
+        width: 170px;
+        max-height: 54px;
+    }
+
+    .app-title {
+        font-size: 32px;
+        margin-bottom: 6px;
+    }
+
+    .app-subtitle {
+        font-size: 13.5px;
+    }
+
     .app-root {
         padding: 0 18px;
         box-sizing: border-box;
@@ -409,6 +517,25 @@
 }
 
 @media (max-width: 480px) {
+    .header-logo-left {
+        width: 108px;
+        max-height: 84px;
+    }
+
+    .header-logo-right {
+        width: 146px;
+        max-height: 46px;
+    }
+
+    .app-title {
+        font-size: 28px;
+    }
+
+    .app-subtitle {
+        font-size: 13px;
+        text-align: left;
+    }
+
     .surface-axis-controls > div {
         width: 100% !important;
     }
