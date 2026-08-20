@@ -411,6 +411,13 @@ def make_empty_conversion_figure(message):
     return fig
 
 
+def conversion_panel_loader(label):
+    return html.Div([
+        html.Div(className="acl-line-loader", **{"aria-hidden": "true"}),
+        html.Div(label, className="conversion-panel-loader-label"),
+    ], className="conversion-panel-loader-inner")
+
+
 def make_conversion_strain_figure(file_info, frame_index):
     output_rows = file_info.get("output_rows", [])
     if not output_rows:
@@ -544,6 +551,14 @@ def nearest_time_index(file_info, clicked_time):
         return 0
     times = [numeric_row_value(row, "time", index) for index, row in enumerate(rows)]
     return min(range(len(times)), key=lambda index: abs(times[index] - clicked_time))
+
+
+def row_time(file_info, frame_index):
+    rows = file_info.get("output_rows", [])
+    if not rows:
+        return 0.0
+    frame_index = clamp_frame_index(file_info, frame_index)
+    return numeric_row_value(rows[frame_index], "time", frame_index)
 
 
 @lru_cache(maxsize=512)
@@ -840,36 +855,34 @@ def make_data_conversion_tab():
                 ], className="playback-transport-buttons"),
                 html.Div(id="conversion-speed-button-wrap", className="playback-speed-selector"),
             ], className="conversion-playback-controls"),
-            dcc.Loading(
-                type="default",
-                delay_show=350,
-                children=html.Div([
-                    html.Div(id="conversion-visualization-status", className="conversion-visualization-status"),
-                    html.Div([
-                        dcc.Graph(
-                            id="conversion-anatomy-plot",
-                            figure=make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
-                            style={"width": "100%", "height": "52vh", "minHeight": "360px"},
-                            config=INTERACTIVE_3D_GRAPH_CONFIG,
-                        ),
-                    ], className="conversion-model-panel"),
-                    html.Div([
-                        dcc.Graph(
-                            id="conversion-strain-graph",
-                            figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
-                            style={"width": "100%", "height": "38vh", "minHeight": "280px"},
-                            config=CONVERSION_TIMELINE_GRAPH_CONFIG,
-                        ),
-                        html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
-                    ], className="conversion-graph-panel", style={
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "6px",
-                        "width": "100%",
-                        "minWidth": "0",
-                    }),
-                ], className="conversion-results-grid"),
-            ),
+            html.Div([
+                html.Div(id="conversion-visualization-status", className="conversion-visualization-status"),
+                html.Div([
+                    html.Div(id="conversion-model-loader", className="conversion-panel-loader"),
+                    dcc.Graph(
+                        id="conversion-anatomy-plot",
+                        figure=make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
+                        style={"width": "100%", "height": "52vh", "minHeight": "360px"},
+                        config=INTERACTIVE_3D_GRAPH_CONFIG,
+                    ),
+                ], className="conversion-model-panel"),
+                html.Div([
+                    html.Div(id="conversion-graph-loader", className="conversion-panel-loader"),
+                    dcc.Graph(
+                        id="conversion-strain-graph",
+                        figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
+                        style={"width": "100%", "height": "38vh", "minHeight": "280px"},
+                        config=CONVERSION_TIMELINE_GRAPH_CONFIG,
+                    ),
+                    html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
+                ], className="conversion-graph-panel", style={
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "6px",
+                    "width": "100%",
+                    "minWidth": "0",
+                }),
+            ], className="conversion-results-grid"),
         ], className="conversion-results-area"),
     ], className="data-conversion-layout")
 
@@ -1489,7 +1502,7 @@ app.layout = html.Div([
         "speed": 1.0,
         "speed_accumulator": 0.0,
     }),
-    dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=False),
+    dcc.Interval(id="conversion-playback-interval", interval=PLAYBACK_INTERVAL_MS, n_intervals=0, disabled=True),
     dcc.Input(id="translation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="rotation-input", value="0,0", type="text", className="pad-sync-input"),
     dcc.Input(id="conversion-scrub-time", value="", type="text", className="pad-sync-input"),
@@ -1905,6 +1918,14 @@ def update_playback_button_state(playback_data):
 
 
 @app.callback(
+    Output("conversion-playback-interval", "disabled"),
+    Input("conversion-playback-store", "data"),
+)
+def update_conversion_interval_state(playback_data):
+    return not bool((playback_data or {}).get("playing"))
+
+
+@app.callback(
     Output("conversion-playback-store", "data"),
     Input("conversion-result-store", "data"),
     Input("conversion-play", "n_clicks"),
@@ -2013,17 +2034,16 @@ def update_conversion_playback(
     elif trigger == "conversion-playback-interval.n_intervals":
         if not playback.get("playing"):
             return no_update
-        accumulator = float(playback.get("speed_accumulator", 0.0)) + float(playback.get("speed", 1.0))
-        frame_step = int(accumulator)
-        playback["speed_accumulator"] = accumulator - frame_step
-        if frame_step > 0:
-            next_frame = current_frame + frame_step
-            if next_frame >= frame_count:
-                playback["frame_index"] = max(frame_count - 1, 0)
-                playback["playing"] = False
-                playback["speed_accumulator"] = 0.0
-            else:
-                playback["frame_index"] = next_frame
+        speed = float(playback.get("speed", 1.0) or 1.0)
+        current_time = row_time(file_info, current_frame)
+        final_time = row_time(file_info, frame_count - 1)
+        next_time = current_time + (PLAYBACK_INTERVAL_MS / 1000.0) * speed
+        if next_time >= final_time:
+            playback["frame_index"] = max(frame_count - 1, 0)
+            playback["playing"] = False
+            playback["speed_accumulator"] = 0.0
+        else:
+            playback["frame_index"] = nearest_time_index(file_info, next_time)
 
     return playback
 
@@ -2032,6 +2052,8 @@ def update_conversion_playback(
     Output("conversion-file-selector-wrap", "children"),
     Output("conversion-speed-button-wrap", "children"),
     Output("conversion-visualization-status", "children"),
+    Output("conversion-model-loader", "children"),
+    Output("conversion-graph-loader", "children"),
     Output("conversion-anatomy-plot", "figure"),
     Output("conversion-strain-graph", "figure"),
     Output("conversion-value-table", "children"),
@@ -2055,6 +2077,8 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
                 for option in PLAYBACK_SPEED_OPTIONS
             ],
             "Upload and process a CSV file to prepare the animation and strain graph.",
+            conversion_panel_loader("Model not prepared"),
+            conversion_panel_loader("Graph not prepared"),
             make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
             make_empty_conversion_figure("Process a CSV file to view strain traces."),
             "",
@@ -2093,6 +2117,8 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
         file_buttons,
         speed_buttons,
         f"Visualization ready. Paused at {current_time:.2f} s." if not (playback_data or {}).get("playing") else f"Playing at {current_time:.2f} s.",
+        "",
+        "",
         make_anatomy_figure(
             flexion=kinematics["flexion"],
             adduction=kinematics["adduction"],

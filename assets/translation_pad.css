@@ -336,7 +336,62 @@
 
 .conversion-model-panel,
 .conversion-graph-panel {
+    position: relative;
     min-width: 0;
+}
+
+.conversion-panel-loader {
+    position: absolute;
+    inset: 10px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.conversion-panel-loader:empty {
+    display: none;
+}
+
+.conversion-panel-loader-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 14px;
+    border: 1px solid rgba(70, 70, 70, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.acl-line-loader {
+    width: 80px;
+    height: 46px;
+    background:
+        linear-gradient(90deg,
+            transparent 0 6px,
+            #e69f00 6px 12px,
+            transparent 12px 18px,
+            #e69f00 18px 24px,
+            transparent 24px 30px,
+            #e69f00 30px 36px,
+            transparent 36px 44px,
+            #0072b2 44px 50px,
+            transparent 50px 56px,
+            #0072b2 56px 62px,
+            transparent 62px 68px,
+            #0072b2 68px 74px,
+            transparent 74px 100%);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.22);
+    animation: acl-fiber-pulse 1.05s ease-in-out infinite;
+}
+
+.conversion-panel-loader-label {
+    color: #444444;
+    font-size: 12px;
+    font-weight: 650;
 }
 
 .conversion-graph-panel {
