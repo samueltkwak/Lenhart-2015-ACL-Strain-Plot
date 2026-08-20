@@ -334,6 +334,10 @@
     align-items: start;
 }
 
+.conversion-animation-feature-hidden {
+    display: none !important;
+}
+
 .conversion-model-panel,
 .conversion-graph-panel {
     position: relative;
@@ -395,6 +399,7 @@
 }
 
 .conversion-graph-panel {
+    grid-column: 1 / -1;
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;

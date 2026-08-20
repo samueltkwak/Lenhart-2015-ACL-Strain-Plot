@@ -462,7 +462,6 @@
     function setupInteractions() {
         setupKinematicPads();
         setupPlotPinchZooms();
-        setupConversionTimelineScrubber();
     }
 
     document.addEventListener("DOMContentLoaded", setupInteractions);

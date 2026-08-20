@@ -53,12 +53,11 @@ STATIC_GRAPH_CONFIG = {
     "displaylogo": False,
     "responsive": True,
 }
-CONVERSION_TIMELINE_GRAPH_CONFIG = {
-    "displayModeBar": False,
+CONVERSION_GRAPH_CONFIG = {
+    "displayModeBar": True,
     "displaylogo": False,
     "responsive": True,
-    "scrollZoom": False,
-    "doubleClick": False,
+    "scrollZoom": True,
 }
 
 scroll_bar1_label = "Knee Flexion (deg)"
@@ -425,7 +424,6 @@ def make_conversion_strain_figure(file_info, frame_index):
 
     frame_index = clamp_frame_index(file_info, frame_index)
     times = [numeric_row_value(row, "time", index) for index, row in enumerate(output_rows)]
-    current_time = times[frame_index]
 
     fig = go.Figure()
     for target in CONVERSION_OUTPUT_COLUMNS:
@@ -440,7 +438,7 @@ def make_conversion_strain_figure(file_info, frame_index):
                 width=3.5 if is_bundle else 1.2,
             ),
             opacity=1.0 if is_bundle else 0.32,
-            hoverinfo="skip",
+            hovertemplate=f"{target}<br>Time: %{{x:.3f}} s<br>Strain: %{{y:.2f}}%<extra></extra>",
             showlegend=False,
         ))
 
@@ -454,39 +452,15 @@ def make_conversion_strain_figure(file_info, frame_index):
         yref="y",
         line=dict(color="rgba(0, 0, 0, 0.72)", width=3),
     )
-    fig.add_shape(
-        type="line",
-        x0=current_time,
-        x1=current_time,
-        y0=0,
-        y1=1,
-        xref="x",
-        yref="paper",
-        line=dict(color="#111111", width=2),
-    )
-    fig.add_annotation(
-        x=current_time,
-        y=1.04,
-        xref="x",
-        yref="paper",
-        text=f"{current_time:.2f} s",
-        showarrow=False,
-        font=dict(size=12, color="#111111"),
-        xanchor="center",
-        yanchor="bottom",
-        bgcolor="rgba(255, 255, 255, 0.85)",
-        bordercolor="rgba(0, 0, 0, 0.18)",
-        borderwidth=1,
-    )
     fig.update_layout(
-        margin=dict(l=42, r=12, t=42, b=40),
+        margin=dict(l=46, r=16, t=18, b=44),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        hovermode=False,
-        dragmode=False,
+        hovermode="x unified",
+        dragmode="zoom",
         uirevision=file_info.get("name", "conversion-strain"),
-        xaxis=dict(title="Time (s)", showgrid=True, gridcolor="#eeeeee", fixedrange=True),
-        yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee", fixedrange=True),
+        xaxis=dict(title="Time (s)", showgrid=True, gridcolor="#eeeeee", fixedrange=False),
+        yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee", fixedrange=False),
     )
     return fig
 
@@ -854,7 +828,7 @@ def make_data_conversion_tab():
                     html.Button([html.Span(">|", className="playback-icon"), html.Span("Next", className="playback-label")], id="conversion-next-frame", n_clicks=0, className="playback-button"),
                 ], className="playback-transport-buttons"),
                 html.Div(id="conversion-speed-button-wrap", className="playback-speed-selector"),
-            ], className="conversion-playback-controls"),
+            ], className="conversion-playback-controls conversion-animation-feature-hidden"),
             html.Div([
                 html.Div(id="conversion-visualization-status", className="conversion-visualization-status"),
                 html.Div([
@@ -865,14 +839,14 @@ def make_data_conversion_tab():
                         style={"width": "100%", "height": "52vh", "minHeight": "360px"},
                         config=INTERACTIVE_3D_GRAPH_CONFIG,
                     ),
-                ], className="conversion-model-panel"),
+                ], className="conversion-model-panel conversion-animation-feature-hidden"),
                 html.Div([
                     html.Div(id="conversion-graph-loader", className="conversion-panel-loader"),
                     dcc.Graph(
                         id="conversion-strain-graph",
                         figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
-                        style={"width": "100%", "height": "38vh", "minHeight": "280px"},
-                        config=CONVERSION_TIMELINE_GRAPH_CONFIG,
+                        style={"width": "100%", "height": "56vh", "minHeight": "420px"},
+                        config=CONVERSION_GRAPH_CONFIG,
                     ),
                     html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
                 ], className="conversion-graph-panel", style={
@@ -2086,10 +2060,6 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
 
     file_info, file_index = selected_conversion_file(result_data, playback_data)
     frame_index = clamp_frame_index(file_info, (playback_data or {}).get("frame_index", 0))
-    selected_row = file_info["output_rows"][frame_index]
-    current_time = numeric_row_value(selected_row, "time", 0)
-    kinematics = kinematics_from_converted_row(selected_row)
-    camera = (relayout_data or {}).get("scene.camera") or ANTERIOR_ANATOMY_CAMERA
 
     file_buttons = [
         html.Button(
@@ -2116,18 +2086,10 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
     return (
         file_buttons,
         speed_buttons,
-        f"Visualization ready. Paused at {current_time:.2f} s." if not (playback_data or {}).get("playing") else f"Playing at {current_time:.2f} s.",
+        "Strain graph ready.",
         "",
         "",
-        make_anatomy_figure(
-            flexion=kinematics["flexion"],
-            adduction=kinematics["adduction"],
-            internal_rotation=kinematics["internal_rotation"],
-            anterior_translation=kinematics["anterior_translation"],
-            lateral_translation=kinematics["lateral_translation"],
-            proximal_translation=kinematics["proximal_translation"],
-            camera=camera,
-        ),
+        no_update,
         make_conversion_strain_figure(file_info, frame_index),
         make_conversion_value_table(file_info, frame_index),
     )
