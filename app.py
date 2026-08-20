@@ -438,7 +438,7 @@ def make_conversion_strain_figure(file_info, frame_index):
                 width=3.5 if is_bundle else 1.2,
             ),
             opacity=1.0 if is_bundle else 0.32,
-            hovertemplate=f"{target}<br>Time: %{{x:.3f}} s<br>Strain: %{{y:.2f}}%<extra></extra>",
+            hoverinfo="skip",
             showlegend=False,
         ))
 
@@ -456,7 +456,7 @@ def make_conversion_strain_figure(file_info, frame_index):
         margin=dict(l=46, r=16, t=18, b=44),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        hovermode="x unified",
+        hovermode=False,
         dragmode="zoom",
         uirevision=file_info.get("name", "conversion-strain"),
         xaxis=dict(title="Time (s)", showgrid=True, gridcolor="#eeeeee", fixedrange=False),
