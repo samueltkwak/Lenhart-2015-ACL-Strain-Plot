@@ -440,6 +440,11 @@
     font-weight: 700;
 }
 
+.conversion-value-header-label {
+    display: block;
+    white-space: nowrap;
+}
+
 .conversion-subhead {
     margin-top: 4px;
     color: #222222;

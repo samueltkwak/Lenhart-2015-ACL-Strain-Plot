@@ -173,7 +173,7 @@ REQUIRED_UPLOAD_COLUMNS = (
 )
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_UPLOAD_SAMPLES = 25000
-PLAYBACK_INTERVAL_MS = 100
+PLAYBACK_INTERVAL_MS = 250
 PLAYBACK_SPEED_OPTIONS = (
     {"label": "0.25x", "value": 0.25},
     {"label": "0.5x", "value": 0.5},
@@ -505,14 +505,14 @@ def make_conversion_value_table(file_info, frame_index):
                 *[
                     html.Th([
                         html.Span(style={
-                            "display": "inline-block",
+                            "display": "block",
                             "width": "10px",
                             "height": "10px",
                             "borderRadius": "50%",
                             "backgroundColor": acl_fiber_color(target),
-                            "marginRight": "5px",
+                            "margin": "0 auto 4px",
                         }),
-                        target,
+                        html.Span(target, className="conversion-value-header-label"),
                     ])
                     for target in CONVERSION_OUTPUT_COLUMNS
                 ],
