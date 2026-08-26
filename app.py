@@ -899,7 +899,7 @@ def make_data_conversion_tab():
                     html.Div(id="conversion-graph-loader", className="conversion-panel-loader"),
                     dcc.Graph(
                         id="conversion-strain-graph",
-                        figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
+                        figure=make_empty_conversion_figure("Waiting for processed data."),
                         style={"width": "100%", "height": "34vh", "minHeight": "260px"},
                         config=CONVERSION_GRAPH_CONFIG,
                     ),
@@ -2108,10 +2108,10 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
                 for option in PLAYBACK_SPEED_OPTIONS
             ],
             "Upload and process a CSV file to prepare the animation and strain graph.",
-            conversion_panel_loader("Model not prepared"),
-            conversion_panel_loader("Graph not prepared"),
+            "",
+            "",
             make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
-            make_empty_conversion_figure("Process a CSV file to view strain traces."),
+            make_empty_conversion_figure("Waiting for processed data."),
             "",
             "",
         )
