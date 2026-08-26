@@ -379,6 +379,23 @@ def conversion_download_payload(files):
     }
 
 
+def example_upload_csv_payload():
+    example_rows = [
+        {"time": "0.00", "flex": "0", "add": "0", "introt": "0", "ant": "0", "prox": "0", "lat": "0"},
+        {"time": "0.01", "flex": "5", "add": "2", "introt": "-3", "ant": "1", "prox": "0", "lat": "-2"},
+        {"time": "0.02", "flex": "10", "add": "4", "introt": "-6", "ant": "2", "prox": "1", "lat": "-4"},
+    ]
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=list(REQUIRED_UPLOAD_COLUMNS), lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(example_rows)
+    return {
+        "content": output.getvalue(),
+        "filename": "acl_kinematics_example.csv",
+        "type": "text/csv",
+    }
+
+
 def numeric_row_value(row, column, default=0):
     try:
         return float(row.get(column, default))
@@ -838,12 +855,14 @@ def make_data_conversion_tab():
             ),
             html.Div(id="upload-summary", className="conversion-status-text"),
             html.Div([
+                html.Button("Download Example CSV", id="download-example-csv", n_clicks=0, className="conversion-action-button conversion-secondary-button"),
                 html.Button("Process", id="process-kinematics", n_clicks=0, disabled=True, className="conversion-action-button"),
                 html.Button("Download", id="download-conversion-output", n_clicks=0, disabled=True, className="conversion-action-button"),
             ], className="conversion-actions"),
             html.Progress(id="conversion-progress", value=0, max=1, className="conversion-progress"),
             html.Div(id="conversion-progress-label", className="conversion-progress-label"),
             html.Div(id="conversion-status", className="conversion-status-text"),
+            dcc.Download(id="example-csv-download"),
             dcc.Download(id="conversion-download"),
             html.Div("Required CSV Format", className="conversion-subhead"),
             html.Table([
@@ -1930,6 +1949,17 @@ def download_conversion_output(download_clicks, result_data):
     if not download_clicks or not result_data or not result_data.get("files"):
         return no_update
     return conversion_download_payload(result_data["files"])
+
+
+@app.callback(
+    Output("example-csv-download", "data"),
+    Input("download-example-csv", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_example_csv(example_clicks):
+    if not example_clicks:
+        return no_update
+    return example_upload_csv_payload()
 
 
 @app.callback(

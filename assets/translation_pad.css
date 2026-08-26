@@ -187,6 +187,12 @@
     color: #ffffff;
 }
 
+.conversion-secondary-button {
+    border-color: #8f8f8f;
+    background: #ffffff;
+    color: #303030;
+}
+
 .conversion-action-button:disabled {
     border-color: #cfcfcf;
     background: #e7e7e7;
