@@ -57,7 +57,7 @@ CONVERSION_GRAPH_CONFIG = {
     "displayModeBar": True,
     "displaylogo": False,
     "responsive": True,
-    "scrollZoom": True,
+    "scrollZoom": False,
 }
 
 scroll_bar1_label = "Knee Flexion (deg)"
@@ -192,6 +192,10 @@ ACL_FIBER_NAMES = (
     "ACLpl4",
     "ACLpl5",
     "ACLpl6",
+)
+ACL_BUNDLE_GROUPS = (
+    ("ACLam", ("ACLam1", "ACLam2", "ACLam3", "ACLam4", "ACLam5", "ACLam6")),
+    ("ACLpl", ("ACLpl1", "ACLpl2", "ACLpl3", "ACLpl4", "ACLpl5", "ACLpl6")),
 )
 
 
@@ -424,6 +428,7 @@ def make_conversion_strain_figure(file_info, frame_index):
 
     frame_index = clamp_frame_index(file_info, frame_index)
     times = [numeric_row_value(row, "time", index) for index, row in enumerate(output_rows)]
+    current_time = times[frame_index]
 
     fig = go.Figure()
     for target in CONVERSION_OUTPUT_COLUMNS:
@@ -452,12 +457,36 @@ def make_conversion_strain_figure(file_info, frame_index):
         yref="y",
         line=dict(color="rgba(0, 0, 0, 0.72)", width=3),
     )
+    fig.add_shape(
+        type="line",
+        x0=current_time,
+        x1=current_time,
+        y0=0,
+        y1=1,
+        xref="x",
+        yref="paper",
+        line=dict(color="#111111", width=2),
+    )
+    fig.add_annotation(
+        x=current_time,
+        y=1.04,
+        xref="x",
+        yref="paper",
+        text=f"{current_time:.2f} s",
+        showarrow=False,
+        font=dict(size=12, color="#111111"),
+        xanchor="center",
+        yanchor="bottom",
+        bgcolor="rgba(255, 255, 255, 0.85)",
+        bordercolor="rgba(0, 0, 0, 0.18)",
+        borderwidth=1,
+    )
     fig.update_layout(
-        margin=dict(l=46, r=16, t=18, b=44),
+        margin=dict(l=46, r=16, t=42, b=44),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         hovermode=False,
-        dragmode="zoom",
+        dragmode=False,
         uirevision=file_info.get("name", "conversion-strain"),
         xaxis=dict(title="Time (s)", showgrid=True, gridcolor="#eeeeee", fixedrange=False),
         yaxis=dict(title="ACL Strain (%)", showgrid=True, gridcolor="#eeeeee", fixedrange=False),
@@ -472,31 +501,57 @@ def make_conversion_value_table(file_info, frame_index):
 
     frame_index = clamp_frame_index(file_info, frame_index)
     row = output_rows[frame_index]
-    return html.Table([
-        html.Tbody([
-            html.Tr([
-                html.Th("Fiber/Bundle"),
-                *[
-                    html.Th([
-                        html.Span(style={
-                            "display": "block",
-                            "width": "10px",
-                            "height": "10px",
-                            "borderRadius": "50%",
-                            "backgroundColor": acl_fiber_color(target),
-                            "margin": "0 auto 4px",
-                        }),
-                        html.Span(target, className="conversion-value-header-label"),
-                    ])
-                    for target in CONVERSION_OUTPUT_COLUMNS
-                ],
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Div([
+                    html.Span(className="conversion-color-dot", style={"backgroundColor": acl_fiber_color(bundle_name)}),
+                    html.Span(f"{bundle_name} {numeric_row_value(row, bundle_name):+.2f}%", className="conversion-bundle-value"),
+                ], className="conversion-bundle-heading"),
+                html.Table([
+                    html.Tbody([
+                        html.Tr([
+                            html.Td(fiber_name),
+                            html.Td(f"{numeric_row_value(row, fiber_name):+.2f}%"),
+                        ])
+                        for fiber_name in fiber_names
+                    ]),
+                ], className="conversion-compact-table"),
+            ], className="conversion-bundle-card")
+            for bundle_name, fiber_names in ACL_BUNDLE_GROUPS
+        ], className="conversion-bundle-grid"),
+    ], className="conversion-strain-summary")
+
+
+def make_conversion_kinematics_table(file_info, frame_index):
+    output_rows = file_info.get("output_rows", [])
+    if not output_rows:
+        return html.Div("No kinematics selected yet.", className="conversion-status-text")
+
+    frame_index = clamp_frame_index(file_info, frame_index)
+    row = output_rows[frame_index]
+    kinematic_rows = (
+        ("Time", numeric_row_value(row, "time"), "s"),
+        ("Flex", numeric_row_value(row, "flex"), "deg"),
+        ("Add", numeric_row_value(row, "add"), "deg"),
+        ("Int Rot", numeric_row_value(row, "introt"), "deg"),
+        ("Ant", numeric_row_value(row, "ant"), "mm"),
+        ("Prox", numeric_row_value(row, "prox"), "mm"),
+        ("Lat", numeric_row_value(row, "lat"), "mm"),
+    )
+    return html.Div([
+        html.Div("Selected Kinematics", className="conversion-table-title"),
+        html.Table([
+            html.Tbody([
+                html.Tr([
+                    html.Td(label),
+                    html.Td(f"{value:.2f}"),
+                    html.Td(unit),
+                ])
+                for label, value, unit in kinematic_rows
             ]),
-            html.Tr([
-                html.Th("Strain (%)"),
-                *[html.Td(f"{numeric_row_value(row, target):+.2f}") for target in CONVERSION_OUTPUT_COLUMNS],
-            ]),
-        ]),
-    ], className="conversion-value-table")
+        ], className="conversion-compact-table conversion-kinematics-table"),
+    ], className="conversion-kinematics-summary")
 
 
 def kinematics_from_converted_row(row):
@@ -839,15 +894,16 @@ def make_data_conversion_tab():
                         style={"width": "100%", "height": "52vh", "minHeight": "360px"},
                         config=INTERACTIVE_3D_GRAPH_CONFIG,
                     ),
-                ], className="conversion-model-panel conversion-animation-feature-hidden"),
+                ], className="conversion-model-panel"),
                 html.Div([
                     html.Div(id="conversion-graph-loader", className="conversion-panel-loader"),
                     dcc.Graph(
                         id="conversion-strain-graph",
                         figure=make_empty_conversion_figure("Process a CSV file to view strain traces."),
-                        style={"width": "100%", "height": "56vh", "minHeight": "420px"},
+                        style={"width": "100%", "height": "34vh", "minHeight": "260px"},
                         config=CONVERSION_GRAPH_CONFIG,
                     ),
+                    html.Div(id="conversion-kinematics-table", className="conversion-kinematics-table-wrap"),
                     html.Div(id="conversion-value-table", className="conversion-value-table-wrap"),
                 ], className="conversion-graph-panel", style={
                     "display": "flex",
@@ -2030,6 +2086,7 @@ def update_conversion_playback(
     Output("conversion-graph-loader", "children"),
     Output("conversion-anatomy-plot", "figure"),
     Output("conversion-strain-graph", "figure"),
+    Output("conversion-kinematics-table", "children"),
     Output("conversion-value-table", "children"),
     Input("conversion-result-store", "data"),
     Input("conversion-playback-store", "data"),
@@ -2056,10 +2113,15 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
             make_anatomy_figure(0, 0, 0, 0, 0, 0, ANTERIOR_ANATOMY_CAMERA),
             make_empty_conversion_figure("Process a CSV file to view strain traces."),
             "",
+            "",
         )
 
     file_info, file_index = selected_conversion_file(result_data, playback_data)
     frame_index = clamp_frame_index(file_info, (playback_data or {}).get("frame_index", 0))
+    selected_row = file_info["output_rows"][frame_index]
+    current_time = numeric_row_value(selected_row, "time", 0)
+    kinematics = kinematics_from_converted_row(selected_row)
+    camera = (relayout_data or {}).get("scene.camera") or ANTERIOR_ANATOMY_CAMERA
 
     file_buttons = [
         html.Button(
@@ -2086,11 +2148,20 @@ def update_conversion_visualization(result_data, playback_data, relayout_data):
     return (
         file_buttons,
         speed_buttons,
-        "Strain graph ready.",
+        f"Selection ready at {current_time:.2f} s.",
         "",
         "",
-        no_update,
+        make_anatomy_figure(
+            flexion=kinematics["flexion"],
+            adduction=kinematics["adduction"],
+            internal_rotation=kinematics["internal_rotation"],
+            anterior_translation=kinematics["anterior_translation"],
+            lateral_translation=kinematics["lateral_translation"],
+            proximal_translation=kinematics["proximal_translation"],
+            camera=camera,
+        ),
         make_conversion_strain_figure(file_info, frame_index),
+        make_conversion_kinematics_table(file_info, frame_index),
         make_conversion_value_table(file_info, frame_index),
     )
 

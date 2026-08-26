@@ -406,15 +406,40 @@
         container.classList.add("conversion-timeline-scrubber");
 
         var dragging = false;
+        var pendingTime = null;
         var lastPublished = null;
 
-        function publish(event) {
+        function markerText(timeValue) {
+            return Number(timeValue).toFixed(2) + " s";
+        }
+
+        function setTimelineMarker(timeValue) {
             var graph = container.querySelector(".js-plotly-plot");
-            var timeValue = timeFromTimelinePointer(event, graph);
-            if (timeValue === null || Number.isNaN(timeValue)) {
+            if (!graph || !window.Plotly || timeValue === null || Number.isNaN(timeValue)) {
                 return;
             }
 
+            window.Plotly.relayout(graph, {
+                "shapes[1].x0": timeValue,
+                "shapes[1].x1": timeValue,
+                "annotations[0].x": timeValue,
+                "annotations[0].text": markerText(timeValue),
+            });
+        }
+
+        function readPointerTime(event) {
+            var graph = container.querySelector(".js-plotly-plot");
+            var timeValue = timeFromTimelinePointer(event, graph);
+            if (timeValue === null || Number.isNaN(timeValue)) {
+                return null;
+            }
+            return timeValue;
+        }
+
+        function publish(timeValue) {
+            if (timeValue === null || Number.isNaN(timeValue)) {
+                return;
+            }
             var rounded = Number(timeValue).toFixed(4);
             if (rounded === lastPublished) {
                 return;
@@ -428,6 +453,9 @@
             if (event.button !== undefined && event.button !== 0) {
                 return;
             }
+            if (event.target && event.target.closest && event.target.closest(".modebar")) {
+                return;
+            }
 
             event.preventDefault();
             dragging = true;
@@ -439,7 +467,8 @@
                     // The pointer can be released by the browser before capture succeeds.
                 }
             }
-            publish(event);
+            pendingTime = readPointerTime(event);
+            setTimelineMarker(pendingTime);
         }, true);
 
         container.addEventListener("pointermove", function (event) {
@@ -447,10 +476,13 @@
                 return;
             }
             event.preventDefault();
-            publish(event);
+            pendingTime = readPointerTime(event);
+            setTimelineMarker(pendingTime);
         }, true);
 
         function stopScrubbing() {
+            publish(pendingTime);
+            pendingTime = null;
             dragging = false;
             container.classList.remove("scrubbing");
         }
@@ -462,6 +494,7 @@
     function setupInteractions() {
         setupKinematicPads();
         setupPlotPinchZooms();
+        setupConversionTimelineScrubber();
     }
 
     document.addEventListener("DOMContentLoaded", setupInteractions);
